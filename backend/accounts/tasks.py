@@ -74,7 +74,7 @@ The SoulConnect Team
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=False,
+            fail_silently=not settings.DEBUG,
         )
         
         print(f"[EMAIL] Verification email sent to {user.email}")
@@ -125,7 +125,7 @@ The SoulConnect Team
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=False,
+            fail_silently=not settings.DEBUG,
         )
         
         print(f"[EMAIL] Password reset email sent to {user.email}")
@@ -180,7 +180,7 @@ The SoulConnect Team
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=False,
+            fail_silently=not settings.DEBUG,
         )
         
         print(f"[EMAIL] Welcome email sent to {user.email}")
@@ -230,7 +230,7 @@ The SoulConnect Team
             message=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[user.email],
-            fail_silently=False,
+            fail_silently=not settings.DEBUG,
         )
         
         print(f"[EMAIL] Match notification sent to {user.email}")

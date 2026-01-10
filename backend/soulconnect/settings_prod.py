@@ -35,7 +35,8 @@ CORS_ALLOWED_ORIGINS = [
 # Add any additional origins from environment
 CORS_ORIGIN_ALLOW = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 if CORS_ORIGIN_ALLOW:
-    CORS_ALLOWED_ORIGINS.extend(CORS_ORIGIN_ALLOW.split(','))
+    additional_origins = [origin.strip() for origin in CORS_ORIGIN_ALLOW.split(',') if origin.strip()]
+    CORS_ALLOWED_ORIGINS.extend(additional_origins)
 
 # Static files with WhiteNoise
 MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
@@ -48,10 +49,18 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = [
     'https://*.onrender.com',
     'https://*.vercel.app',
 ]
+
+# Add any additional CSRF origins from environment
+CSRF_ORIGINS_ENV = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
+if CSRF_ORIGINS_ENV:
+    additional_csrf = [origin.strip() for origin in CSRF_ORIGINS_ENV.split(',') if origin.strip()]
+    CSRF_TRUSTED_ORIGINS.extend(additional_csrf)
 
 # Secret Key from environment
 SECRET_KEY = os.environ.get('SECRET_KEY', SECRET_KEY)

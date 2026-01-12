@@ -82,13 +82,14 @@ TEMPLATES = [
 WSGI_APPLICATION = 'soulconnect.wsgi.application'
 
 # Database Configuration
-# Use DATABASE_URL if available (Render), otherwise use individual settings
+# Priority: DATABASE_URL > Individual PostgreSQL settings > SQLite fallback
 import dj_database_url
 
 DATABASE_URL = config('DATABASE_URL', default='')
+USE_SQLITE = config('USE_SQLITE', default=False, cast=bool)
 
 if DATABASE_URL:
-    # Render PostgreSQL (uses DATABASE_URL)
+    # Production: Render/Neon PostgreSQL (uses DATABASE_URL)
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
@@ -96,8 +97,16 @@ if DATABASE_URL:
             conn_health_checks=True,
         )
     }
+elif USE_SQLITE or config('DB_HOST', default='') == '':
+    # Development: SQLite (simple, no setup needed)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 else:
-    # Individual database settings (Azure/custom PostgreSQL)
+    # Custom PostgreSQL (Azure/local)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',

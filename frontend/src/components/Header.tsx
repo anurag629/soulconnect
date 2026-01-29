@@ -20,7 +20,6 @@ import {
   X,
   CreditCard,
   Users,
-  Star,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/lib/store'
@@ -136,16 +135,6 @@ const Header: React.FC = () => {
                       >
                         <User className="h-4 w-4" />
                         My Profile
-                      </Link>
-                    </DropdownMenu.Item>
-
-                    <DropdownMenu.Item asChild>
-                      <Link
-                        href="/shortlist"
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer outline-none"
-                      >
-                        <Star className="h-4 w-4" />
-                        Shortlisted
                       </Link>
                     </DropdownMenu.Item>
 

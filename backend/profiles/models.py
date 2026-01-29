@@ -75,22 +75,6 @@ class Profile(models.Model):
         ('100+', 'More than 1 Crore'),
     ]
     
-    # Body type choices
-    BODY_TYPE_CHOICES = [
-        ('slim', 'Slim'),
-        ('average', 'Average'),
-        ('athletic', 'Athletic'),
-        ('heavy', 'Heavy'),
-    ]
-    
-    # Complexion choices
-    COMPLEXION_CHOICES = [
-        ('fair', 'Fair'),
-        ('wheatish', 'Wheatish'),
-        ('dusky', 'Dusky'),
-        ('dark', 'Dark'),
-    ]
-    
     # Primary key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     
@@ -111,16 +95,14 @@ class Profile(models.Model):
         validators=[MinValueValidator(120), MaxValueValidator(220)],
         help_text="Height in centimeters"
     )
-    body_type = models.CharField(max_length=20, choices=BODY_TYPE_CHOICES, blank=True)
-    complexion = models.CharField(max_length=20, choices=COMPLEXION_CHOICES, blank=True)
-    
+
     # Personal Details
     marital_status = models.CharField(max_length=20, choices=MARITAL_STATUS_CHOICES)
     religion = models.CharField(max_length=20, choices=RELIGION_CHOICES)
     caste = models.CharField(max_length=100, blank=True)
     sub_caste = models.CharField(max_length=100, blank=True)
-    mother_tongue = models.CharField(max_length=50)
-    
+    gotra = models.CharField(max_length=100, blank=True)
+
     # Education & Career
     education = models.CharField(max_length=50, choices=EDUCATION_CHOICES)
     education_detail = models.CharField(max_length=200, blank=True, help_text="Specific degree/college")
@@ -128,12 +110,18 @@ class Profile(models.Model):
     company_name = models.CharField(max_length=100, blank=True)
     annual_income = models.CharField(max_length=20, choices=INCOME_CHOICES)
     
-    # Location
-    city = models.CharField(max_length=100)
+    # Present Address
     state = models.CharField(max_length=100)
+    district = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, help_text="City/Area")
     country = models.CharField(max_length=100, default='India')
     pincode = models.CharField(max_length=10, blank=True)
-    
+
+    # Native Address
+    native_state = models.CharField(max_length=100, blank=True)
+    native_district = models.CharField(max_length=100, blank=True)
+    native_area = models.CharField(max_length=100, blank=True)
+
     # Family Details
     father_name = models.CharField(max_length=100, blank=True)
     father_occupation = models.CharField(max_length=100, blank=True)
@@ -216,30 +204,35 @@ class Profile(models.Model):
     def calculate_profile_score(self):
         """Calculate profile completeness score (0-100)."""
         score = 0
-        fields_to_check = [
+
+        # Required fields (5 points each, 14 fields = 70 points max)
+        required_fields = [
             'full_name', 'gender', 'date_of_birth', 'height_cm', 'marital_status',
-            'religion', 'mother_tongue', 'education', 'profession', 'annual_income',
-            'city', 'state', 'diet', 'about_me'
+            'religion', 'education', 'profession', 'annual_income',
+            'city', 'state', 'district', 'diet', 'about_me'
         ]
-        
-        for field in fields_to_check:
+
+        for field in required_fields:
             if getattr(self, field, None):
                 score += 5
-        
-        # Bonus for optional fields
+
+        # Optional fields (1 point each, 20 fields = 20 points max)
         optional_fields = [
-            'caste', 'education_detail', 'company_name', 'father_occupation',
-            'mother_occupation', 'siblings', 'body_type', 'complexion'
+            'caste', 'sub_caste', 'gotra', 'education_detail', 'company_name',
+            'father_name', 'father_occupation', 'mother_name', 'mother_occupation',
+            'siblings', 'family_type', 'family_values',
+            'native_state', 'native_district', 'native_area',
+            'birth_place', 'birth_time', 'phone_number', 'manglik', 'star_sign'
         ]
-        
+
         for field in optional_fields:
             if getattr(self, field, None):
-                score += 2
-        
-        # Bonus for photos
-        photo_count = self.photos.filter(is_approved=True).count()
-        score += min(photo_count * 3, 15)
-        
+                score += 1
+
+        # Bonus for photos (max 10 points) - count all photos, not just approved
+        photo_count = self.photos.count()
+        score += min(photo_count * 2, 10)
+
         self.profile_score = min(score, 100)
         self.save(update_fields=['profile_score'])
         return self.profile_score

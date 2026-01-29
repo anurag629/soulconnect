@@ -204,41 +204,52 @@ export interface Profile {
   age: number
   height_cm: number
   height_display: string
-  body_type: string
-  complexion: string
   marital_status: string
   religion: string
   caste: string
   sub_caste: string
-  mother_tongue: string
+  gotra: string
   education: string
   education_detail: string
   profession: string
   company_name: string
   annual_income: string
-  city: string
+  // Present Address
   state: string
+  district: string
+  city: string
   country: string
+  pincode: string
+  // Native Address
+  native_state: string
+  native_district: string
+  native_area: string
+  // Family
+  father_name: string
   father_occupation: string
+  mother_name: string
   mother_occupation: string
   siblings: string
   family_type: string
   family_values: string
+  // Lifestyle
   diet: string
   smoking: string
   drinking: string
   manglik: string
   star_sign: string
+  birth_time: string
+  birth_place: string
   about_me: string
+  phone_number: string
+  whatsapp_number: string
   profile_views: number
   profile_score: number
   photos: ProfilePhoto[]
-  partner_preferences: PartnerPreference | null
   is_verified: boolean
   is_premium: boolean
   created_at: string
   updated_at: string
-  completion_percentage: number
 }
 
 export interface ProfilePhoto {
@@ -251,31 +262,6 @@ export interface ProfilePhoto {
   uploaded_at: string
 }
 
-// PartnerPreference - backend uses JSONField arrays for most fields
-export interface PartnerPreference {
-  age_from: number
-  age_to: number
-  height_from: number
-  height_to: number
-  marital_status: string[] | string
-  religion: string[] | string
-  caste: string[] | string
-  caste_no_bar: boolean
-  education: string[] | string
-  profession: string[] | string
-  income_from: string
-  income_to: string
-  country: string[] | string
-  state: string[] | string
-  city: string[] | string
-  mother_tongue: string[] | string
-  diet: string[] | string
-  smoking: string[] | string
-  drinking: string[] | string
-  manglik: string[] | string
-  additional_preferences: string
-}
-
 interface ProfileState {
   profile: Profile | null
   isLoading: boolean
@@ -283,7 +269,6 @@ interface ProfileState {
 
   fetchProfile: () => Promise<void>
   updateProfile: (data: Partial<Profile>) => Promise<boolean>
-  updatePreferences: (data: Record<string, unknown>) => Promise<boolean>
   setProfile: (profile: Profile) => void
   clearProfile: () => void
 }
@@ -319,29 +304,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       return true
     } catch (error: any) {
       const message = error.response?.data?.detail || 'Failed to update profile'
-      set({ error: message, isLoading: false })
-      toast.error(message)
-      return false
-    }
-  },
-
-  updatePreferences: async (data: Record<string, unknown>) => {
-    set({ isLoading: true, error: null })
-
-    try {
-      const { profileAPI } = await import('./api')
-      const response = await profileAPI.updatePartnerPreferences(data as any)
-      const currentProfile = get().profile
-      if (currentProfile) {
-        set({
-          profile: { ...currentProfile, partner_preferences: response.data },
-          isLoading: false,
-        })
-      }
-      toast.success('Preferences updated successfully')
-      return true
-    } catch (error: any) {
-      const message = error.response?.data?.detail || 'Failed to update preferences'
       set({ error: message, isLoading: false })
       toast.error(message)
       return false

@@ -1,17 +1,10 @@
-/**
- * Profile Edit Page
- * Form for editing user profile details with simple tab navigation
- */
-
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Save, Loader2 } from 'lucide-react'
+import { ChevronLeft, Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -20,72 +13,83 @@ import { Select } from '@/components/ui/Select'
 import { Spinner } from '@/components/ui/Loading'
 import { useProfileStore } from '@/lib/store'
 import { profileAPI } from '@/lib/api'
-import { cn } from '@/lib/utils'
+import { cn, RELIGIONS, INDIAN_STATES } from '@/lib/utils'
 
-// Profile form schema - matches backend ProfileUpdateSerializer fields
-const profileSchema = z.object({
-  about_me: z.string().max(2000).optional(),
-  full_name: z.string().optional(),
-  height_cm: z.number().min(100).max(250).optional().nullable(),
-  body_type: z.string().optional(),
-  complexion: z.string().optional(),
-  marital_status: z.string().optional(),
-  religion: z.string().optional(),
-  caste: z.string().optional(),
-  sub_caste: z.string().optional(),
-  mother_tongue: z.string().optional(),
-  manglik: z.string().optional(),
-  star_sign: z.string().optional(),
-  birth_time: z.string().optional(),
-  birth_place: z.string().optional(),
-  education: z.string().optional(),
-  education_detail: z.string().optional(),
-  profession: z.string().optional(),
-  annual_income: z.string().optional(),
-  company_name: z.string().optional(),
-  family_type: z.string().optional(),
-  family_values: z.string().optional(),
-  father_occupation: z.string().optional(),
-  mother_occupation: z.string().optional(),
-  siblings: z.string().optional(),
-  diet: z.string().optional(),
-  smoking: z.string().optional(),
-  drinking: z.string().optional(),
-  country: z.string().optional(),
-  state: z.string().optional(),
-  city: z.string().optional(),
-  pincode: z.string().optional(),
-})
-
-type ProfileFormData = z.infer<typeof profileSchema>
-
-// Options for various fields
-const BODY_TYPES = ['Slim', 'Average', 'Athletic', 'Heavy']
-const COMPLEXIONS = ['Very Fair', 'Fair', 'Wheatish', 'Dark']
-const RELIGIONS = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Buddhist', 'Jain', 'Other']
-const EDUCATION_LEVELS = ['High School', 'Diploma', 'Bachelors', 'Masters', 'Doctorate', 'Professional Degree']
-const OCCUPATIONS = ['Software Professional', 'Doctor', 'Engineer', 'Teacher', 'Business', 'Government', 'Private Job', 'Self Employed', 'Other']
-const INCOME_RANGES = ['Below 3 Lakh', '3-5 Lakh', '5-7 Lakh', '7-10 Lakh', '10-15 Lakh', '15-25 Lakh', '25-50 Lakh', '50 Lakh - 1 Crore', 'Above 1 Crore']
-const FAMILY_TYPES = ['Joint', 'Nuclear', 'Extended']
-const FAMILY_VALUES = ['Orthodox', 'Traditional', 'Moderate', 'Liberal']
-const DIET_OPTIONS = ['Vegetarian', 'Non-Vegetarian', 'Eggetarian', 'Vegan']
-const YES_NO_OCCASIONALLY = ['Yes', 'No', 'Occasionally']
-const INDIAN_STATES = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
-  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
-  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
-  'Uttar Pradesh', 'Uttarakhand', 'West Bengal', 'Delhi NCR',
+// Backend-aligned constants
+const GENDER_OPTIONS = [
+  { value: 'M', label: 'Male' },
+  { value: 'F', label: 'Female' },
 ]
-const MOTHER_TONGUES = ['Hindi', 'English', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 'Gujarati', 'Kannada', 'Malayalam', 'Punjabi', 'Odia', 'Urdu']
+
+const EDUCATION_OPTIONS = [
+  { value: 'high_school', label: 'High School' },
+  { value: 'diploma', label: 'Diploma' },
+  { value: 'bachelors', label: "Bachelor's Degree" },
+  { value: 'masters', label: "Master's Degree" },
+  { value: 'doctorate', label: 'Doctorate/PhD' },
+  { value: 'professional', label: 'Professional Degree' },
+]
+
+const INCOME_OPTIONS = [
+  { value: '0-3', label: 'Below 3 Lakh' },
+  { value: '3-5', label: '3-5 Lakh' },
+  { value: '5-10', label: '5-10 Lakh' },
+  { value: '10-15', label: '10-15 Lakh' },
+  { value: '15-25', label: '15-25 Lakh' },
+  { value: '25-50', label: '25-50 Lakh' },
+  { value: '50-75', label: '50-75 Lakh' },
+  { value: '75-100', label: '75 Lakh - 1 Crore' },
+  { value: '100+', label: 'Above 1 Crore' },
+]
+
+const MARITAL_STATUS_OPTIONS = [
+  { value: 'never_married', label: 'Never Married' },
+  { value: 'divorced', label: 'Divorced' },
+  { value: 'widowed', label: 'Widowed' },
+  { value: 'awaiting_divorce', label: 'Awaiting Divorce' },
+]
+
+const DIET_OPTIONS = [
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'non_vegetarian', label: 'Non-Vegetarian' },
+  { value: 'eggetarian', label: 'Eggetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'jain', label: 'Jain' },
+]
+
+const YES_NO_OPTIONS = [
+  { value: 'no', label: 'No' },
+  { value: 'occasionally', label: 'Occasionally' },
+  { value: 'yes', label: 'Yes' },
+]
+
+const MANGLIK_OPTIONS = [
+  { value: 'no', label: 'No' },
+  { value: 'yes', label: 'Yes' },
+  { value: 'partial', label: 'Partial' },
+  { value: 'dont_know', label: "Don't Know" },
+]
+
+const FAMILY_TYPE_OPTIONS = [
+  { value: 'joint', label: 'Joint Family' },
+  { value: 'nuclear', label: 'Nuclear Family' },
+]
+
+const FAMILY_VALUES_OPTIONS = [
+  { value: 'traditional', label: 'Traditional' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'liberal', label: 'Liberal' },
+]
+
+const STAR_SIGN_OPTIONS = [
+  'Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo',
+  'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+].map(s => ({ value: s.toLowerCase(), label: s }))
 
 const TABS = [
-  { id: 'basic', label: 'Basic Info' },
-  { id: 'religious', label: 'Religious' },
-  { id: 'education', label: 'Education' },
+  { id: 'basic', label: 'Basic' },
+  { id: 'background', label: 'Background' },
   { id: 'family', label: 'Family' },
-  { id: 'lifestyle', label: 'Lifestyle' },
   { id: 'location', label: 'Location' },
 ]
 
@@ -96,124 +100,108 @@ export default function ProfileEditPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    watch,
-    formState: { errors, isDirty },
-  } = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
-  })
+  const { register, handleSubmit, reset, formState: { isDirty } } = useForm()
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const load = async () => {
       setIsLoading(true)
-      try {
-        await fetchProfile()
-      } catch (error) {
-        console.error('Failed to fetch profile:', error)
-      } finally {
-        setIsLoading(false)
-      }
+      await fetchProfile()
+      setIsLoading(false)
     }
-    loadProfile()
+    load()
   }, [fetchProfile])
 
   useEffect(() => {
     if (profile) {
       reset({
+        // Basic Info
         about_me: profile.about_me || '',
         full_name: profile.full_name || '',
-        height_cm: profile.height_cm || null,
-        body_type: profile.body_type || '',
-        complexion: profile.complexion || '',
+        gender: profile.gender || '',
+        date_of_birth: profile.date_of_birth || '',
+        height_cm: profile.height_cm || '',
         marital_status: profile.marital_status || '',
+        // Religious Background
         religion: profile.religion || '',
         caste: profile.caste || '',
         sub_caste: profile.sub_caste || '',
-        mother_tongue: profile.mother_tongue || '',
+        gotra: profile.gotra || '',
         manglik: profile.manglik || '',
         star_sign: profile.star_sign || '',
-        birth_time: '',
-        birth_place: '',
+        birth_place: profile.birth_place || '',
+        birth_time: profile.birth_time || '',
+        // Education & Career
         education: profile.education || '',
         education_detail: profile.education_detail || '',
         profession: profile.profession || '',
-        annual_income: profile.annual_income || '',
         company_name: profile.company_name || '',
-        family_type: profile.family_type || '',
-        family_values: profile.family_values || '',
+        annual_income: profile.annual_income || '',
+        // Family
+        father_name: profile.father_name || '',
         father_occupation: profile.father_occupation || '',
+        mother_name: profile.mother_name || '',
         mother_occupation: profile.mother_occupation || '',
         siblings: profile.siblings || '',
+        family_type: profile.family_type || '',
+        family_values: profile.family_values || '',
+        // Lifestyle
         diet: profile.diet || '',
         smoking: profile.smoking || '',
         drinking: profile.drinking || '',
-        country: profile.country || 'India',
+        // Contact
+        phone_number: profile.phone_number || '',
+        // Present Address
         state: profile.state || '',
+        district: profile.district || '',
         city: profile.city || '',
-        pincode: '',
+        // Native Address
+        native_state: profile.native_state || '',
+        native_district: profile.native_district || '',
+        native_area: profile.native_area || '',
       })
     }
   }, [profile, reset])
 
-  const onSubmit = async (data: ProfileFormData) => {
+  const onSubmit = async (data: any) => {
     setIsSaving(true)
     try {
       const cleanData = Object.fromEntries(
-        Object.entries(data).filter(([_, v]) => v !== null && v !== undefined && v !== '')
+        Object.entries(data).filter(([_, v]) => v !== '' && v !== null)
       )
       await profileAPI.updateProfile(cleanData)
       await fetchProfile()
-      toast.success('Profile updated successfully!')
+      toast.success('Profile updated!')
       router.push('/profile')
     } catch (error: any) {
-      console.error('Failed to update profile:', error)
-      toast.error(error.response?.data?.detail || 'Failed to update profile')
+      toast.error(error.response?.data?.detail || 'Failed to update')
     } finally {
       setIsSaving(false)
     }
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Spinner size="lg" />
-      </div>
-    )
+    return <div className="flex items-center justify-center min-h-[60vh]"><Spinner size="lg" /></div>
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Link href="/profile">
-            <Button variant="outline" size="sm">
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back
-            </Button>
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Edit Profile</h1>
-        </div>
-        <Button onClick={handleSubmit(onSubmit)} disabled={isSaving || !isDirty}>
-          {isSaving ? (
-            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>
-          ) : (
-            <><Save className="h-4 w-4 mr-2" />Save Changes</>
-          )}
-        </Button>
+    <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="flex items-center gap-3 mb-4">
+        <Link href="/profile">
+          <Button variant="outline" size="sm"><ChevronLeft className="h-4 w-4" /></Button>
+        </Link>
+        <h1 className="text-xl font-bold text-gray-900">Edit Profile</h1>
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-6 p-1 bg-gray-100 rounded-xl">
+      {/* Tabs */}
+      <div className="flex gap-1 mb-4 p-1 bg-gray-100 rounded-lg overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              'px-4 py-2 text-sm font-medium rounded-lg transition-all',
-              activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              'flex-1 px-3 py-2 text-sm font-medium rounded-md transition whitespace-nowrap',
+              activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
             )}
           >
             {tab.label}
@@ -222,135 +210,164 @@ export default function ProfileEditPage() {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* Basic Info Tab */}
         {activeTab === 'basic' && (
           <Card>
-            <CardHeader><CardTitle>Basic Information</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
+            <CardHeader><CardTitle className="text-base">Basic Info</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">About Me</label>
-                <textarea {...register('about_me')} rows={5} className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Write something about yourself..." />
-                <p className="text-sm text-gray-500 mt-1">{watch('about_me')?.length || 0}/2000 characters</p>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">About Me</label>
+                <textarea
+                  {...register('about_me')}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Write about yourself..."
+                />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Full Name" {...register('full_name')} placeholder="e.g., John Doe" />
-                <Input label="Height (cm)" type="number" {...register('height_cm', { valueAsNumber: true })} placeholder="e.g., 170" />
+              <Input label="Full Name" {...register('full_name')} />
+              <div className="grid grid-cols-2 gap-3">
+                <Select label="Gender" options={GENDER_OPTIONS} {...register('gender')} />
+                <Input label="Date of Birth" type="date" {...register('date_of_birth')} />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select label="Body Type" options={BODY_TYPES.map(t => ({ value: t.toLowerCase(), label: t }))} {...register('body_type')} />
-                <Select label="Complexion" options={COMPLEXIONS.map(c => ({ value: c.toLowerCase().replace(' ', '_'), label: c }))} {...register('complexion')} />
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Height (cm)" type="number" {...register('height_cm')} />
+                <Select label="Marital Status" options={MARITAL_STATUS_OPTIONS} {...register('marital_status')} />
               </div>
-              <Select label="Marital Status" options={[
-                { value: 'never_married', label: 'Never Married' },
-                { value: 'divorced', label: 'Divorced' },
-                { value: 'widowed', label: 'Widowed' },
-                { value: 'awaiting_divorce', label: 'Awaiting Divorce' }
-              ]} {...register('marital_status')} />
+
+              <Input label="Phone Number" type="tel" {...register('phone_number')} />
+
+              {/* Lifestyle in Basic tab */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Lifestyle</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  <Select label="Diet" options={DIET_OPTIONS} {...register('diet')} />
+                  <Select label="Smoking" options={YES_NO_OPTIONS} {...register('smoking')} />
+                  <Select label="Drinking" options={YES_NO_OPTIONS} {...register('drinking')} />
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {activeTab === 'religious' && (
+        {/* Background Tab */}
+        {activeTab === 'background' && (
           <Card>
-            <CardHeader><CardTitle>Religious & Community</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select label="Religion" options={RELIGIONS.map(r => ({ value: r.toLowerCase(), label: r }))} {...register('religion')} />
-                <Select label="Mother Tongue" options={MOTHER_TONGUES.map(l => ({ value: l.toLowerCase(), label: l }))} {...register('mother_tongue')} />
+            <CardHeader><CardTitle className="text-base">Religious & Education Background</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {/* Religious */}
+              <Select
+                label="Religion"
+                options={RELIGIONS.map(r => ({ value: r.toLowerCase(), label: r }))}
+                {...register('religion')}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Caste" {...register('caste')} />
+                <Input label="Sub-Caste" {...register('sub_caste')} />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Caste" {...register('caste')} placeholder="Enter your caste" />
-                <Input label="Sub Caste" {...register('sub_caste')} placeholder="Enter your sub-caste" />
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Gotra" {...register('gotra')} />
+                <Select label="Manglik" options={MANGLIK_OPTIONS} {...register('manglik')} />
               </div>
-              <Select label="Star Sign" options={[
-                { value: 'aries', label: 'Aries' },
-                { value: 'taurus', label: 'Taurus' },
-                { value: 'gemini', label: 'Gemini' },
-                { value: 'cancer', label: 'Cancer' },
-                { value: 'leo', label: 'Leo' },
-                { value: 'virgo', label: 'Virgo' },
-                { value: 'libra', label: 'Libra' },
-                { value: 'scorpio', label: 'Scorpio' },
-                { value: 'sagittarius', label: 'Sagittarius' },
-                { value: 'capricorn', label: 'Capricorn' },
-                { value: 'aquarius', label: 'Aquarius' },
-                { value: 'pisces', label: 'Pisces' }
-              ]} {...register('star_sign')} />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-3">
+                <Select label="Star Sign (Rashi)" options={STAR_SIGN_OPTIONS} {...register('star_sign')} />
                 <Input label="Birth Time" type="time" {...register('birth_time')} />
-                <Input label="Birth Place" {...register('birth_place')} placeholder="Enter birth place" />
               </div>
-              <Select label="Manglik" options={[
-                { value: 'yes', label: 'Yes' },
-                { value: 'no', label: 'No' },
-                { value: 'partial', label: 'Partial' },
-                { value: 'dont_know', label: "Don't Know" }
-              ]} {...register('manglik')} />
+              <Input label="Birth Place" placeholder="e.g., Mumbai, Maharashtra" {...register('birth_place')} />
+
+              {/* Education & Career */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Education & Career</h4>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Select label="Education" options={EDUCATION_OPTIONS} {...register('education')} />
+                    <Input label="Degree/College" placeholder="e.g., B.Tech from IIT" {...register('education_detail')} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input label="Profession" {...register('profession')} />
+                    <Input label="Company" {...register('company_name')} />
+                  </div>
+                  <Select label="Annual Income" options={INCOME_OPTIONS} {...register('annual_income')} />
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
 
-        {activeTab === 'education' && (
-          <Card>
-            <CardHeader><CardTitle>Education & Career</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select label="Highest Education" options={EDUCATION_LEVELS.map(e => ({ value: e.toLowerCase().replace(/ /g, '_'), label: e }))} {...register('education')} />
-                <Input label="Education Details" {...register('education_detail')} placeholder="e.g., B.Tech from IIT Delhi" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select label="Profession" options={OCCUPATIONS.map(o => ({ value: o.toLowerCase().replace(/ /g, '_'), label: o }))} {...register('profession')} />
-                <Input label="Company" {...register('company_name')} placeholder="e.g., Google India" />
-              </div>
-              <Select label="Annual Income" options={INCOME_RANGES.map(i => ({ value: i.toLowerCase().replace(/ /g, '_'), label: i }))} {...register('annual_income')} />
-            </CardContent>
-          </Card>
-        )}
-
+        {/* Family Tab */}
         {activeTab === 'family' && (
           <Card>
-            <CardHeader><CardTitle>Family Details</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Select label="Family Type" options={FAMILY_TYPES.map(t => ({ value: t.toLowerCase(), label: t }))} {...register('family_type')} />
-                <Select label="Family Values" options={FAMILY_VALUES.map(v => ({ value: v.toLowerCase(), label: v }))} {...register('family_values')} />
+            <CardHeader><CardTitle className="text-base">Family Details</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Father's Name" {...register('father_name')} />
+                <Input label="Father's Occupation" {...register('father_occupation')} />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Father's Occupation" {...register('father_occupation')} placeholder="e.g., Retired Officer" />
-                <Input label="Mother's Occupation" {...register('mother_occupation')} placeholder="e.g., Homemaker" />
+              <div className="grid grid-cols-2 gap-3">
+                <Input label="Mother's Name" {...register('mother_name')} />
+                <Input label="Mother's Occupation" {...register('mother_occupation')} />
               </div>
-              <Input label="Siblings" {...register('siblings')} placeholder="e.g., 1 elder brother, 1 younger sister" />
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === 'lifestyle' && (
-          <Card>
-            <CardHeader><CardTitle>Lifestyle</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Select label="Diet" options={DIET_OPTIONS.map(d => ({ value: d.toLowerCase().replace('-', '_'), label: d }))} {...register('diet')} />
-                <Select label="Smoking" options={YES_NO_OCCASIONALLY.map(o => ({ value: o.toLowerCase(), label: o }))} {...register('smoking')} />
-                <Select label="Drinking" options={YES_NO_OCCASIONALLY.map(o => ({ value: o.toLowerCase(), label: o }))} {...register('drinking')} />
+              <Input
+                label="Siblings"
+                placeholder="e.g., 1 elder brother, 1 younger sister"
+                {...register('siblings')}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <Select label="Family Type" options={FAMILY_TYPE_OPTIONS} {...register('family_type')} />
+                <Select label="Family Values" options={FAMILY_VALUES_OPTIONS} {...register('family_values')} />
               </div>
             </CardContent>
           </Card>
         )}
 
+        {/* Location Tab */}
         {activeTab === 'location' && (
           <Card>
-            <CardHeader><CardTitle>Location</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="Country" {...register('country')} placeholder="e.g., India" />
-                <Select label="State" options={INDIAN_STATES.map(s => ({ value: s.toLowerCase().replace(/ /g, '_'), label: s }))} {...register('state')} />
+            <CardHeader><CardTitle className="text-base">Address Details</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              {/* Present Address */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Present Address</h4>
+                <div className="space-y-3">
+                  <Select
+                    label="State"
+                    options={INDIAN_STATES.map(s => ({ value: s, label: s }))}
+                    {...register('state')}
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input label="District" {...register('district')} />
+                    <Input label="City/Area" {...register('city')} />
+                  </div>
+                </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Input label="City" {...register('city')} placeholder="e.g., Mumbai" />
-                <Input label="Pincode" {...register('pincode')} placeholder="e.g., 400001" />
+
+              {/* Native Address */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Native Address</h4>
+                <div className="space-y-3">
+                  <Select
+                    label="State"
+                    options={INDIAN_STATES.map(s => ({ value: s, label: s }))}
+                    {...register('native_state')}
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input label="District" {...register('native_district')} />
+                    <Input label="Area/Village" {...register('native_area')} />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
+
+        {/* Save Button at Bottom */}
+        <Button
+          type="submit"
+          className="w-full mt-4"
+          isLoading={isSaving}
+          disabled={!isDirty}
+        >
+          Save Changes
+        </Button>
       </form>
     </div>
   )

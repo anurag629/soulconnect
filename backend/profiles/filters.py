@@ -41,12 +41,12 @@ class ProfileFilter(filters.FilterSet):
     
     # Location filters
     city = filters.CharFilter(lookup_expr='icontains')
+    district = filters.CharFilter(lookup_expr='icontains')
     state = filters.CharFilter(lookup_expr='icontains')
     country = filters.CharFilter(lookup_expr='iexact')
     
     # Other filters
     caste = filters.CharFilter(lookup_expr='icontains')
-    mother_tongue = filters.CharFilter(lookup_expr='icontains')
     profession = filters.CharFilter(lookup_expr='icontains')
     
     # Lifestyle filters
@@ -73,9 +73,8 @@ class ProfileFilter(filters.FilterSet):
         model = Profile
         fields = [
             'gender', 'religion', 'marital_status', 'education',
-            'diet', 'city', 'state', 'country', 'caste',
-            'mother_tongue', 'profession', 'smoking', 'drinking',
-            'annual_income'
+            'diet', 'city', 'district', 'state', 'country', 'caste',
+            'profession', 'smoking', 'drinking', 'annual_income'
         ]
     
     def filter_age_min(self, queryset, name, value):

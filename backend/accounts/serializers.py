@@ -61,27 +61,61 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        """Create new user with hashed password."""
-        # Remove profile-related fields (will be used when creating profile)
+        """Create new user with hashed password and profile."""
+        from profiles.models import Profile
+
+        # Extract profile-related fields
         phone_number = validated_data.pop('phone_number', '')
-        gender = validated_data.pop('gender', '')
+        gender = validated_data.pop('gender', 'M')
         date_of_birth = validated_data.pop('date_of_birth', None)
-        
+
+        # Use default date if not provided
+        if not date_of_birth:
+            from datetime import date
+            date_of_birth = date(1990, 1, 1)
+
         user = User.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
         )
-        
-        # Store registration data in context for profile creation later
-        # The profile will be created when user completes profile setup
-        self.context['registration_data'] = {
-            'phone_number': phone_number,
-            'gender': gender,
-            'date_of_birth': date_of_birth,
-        }
-        
+
+        # Create profile with actual registration data
+        # This runs after user creation, so signal's fallback won't trigger
+        try:
+            # Check if signal already created a profile
+            profile = Profile.objects.filter(user=user).first()
+            if profile:
+                # Update with actual data
+                profile.full_name = f"{user.first_name} {user.last_name}".strip() or "New User"
+                profile.gender = 'M' if gender.upper() in ['M', 'MALE'] else 'F'
+                profile.date_of_birth = date_of_birth
+                profile.phone_number = phone_number
+                profile.save()
+            else:
+                # Create new profile with actual data
+                Profile.objects.create(
+                    user=user,
+                    full_name=f"{user.first_name} {user.last_name}".strip() or "New User",
+                    gender='M' if gender.upper() in ['M', 'MALE'] else 'F',
+                    date_of_birth=date_of_birth,
+                    height_cm=170,
+                    marital_status='never_married',
+                    religion='hindu',
+                    education='bachelors',
+                    profession='Not specified',
+                    annual_income='5-10',
+                    city='Not specified',
+                    state='Not specified',
+                    country='India',
+                    diet='vegetarian',
+                    phone_number=phone_number,
+                    about_me='',
+                )
+        except Exception as e:
+            print(f"[WARNING] Profile creation/update failed for {user.email}: {e}")
+
         return user
 
 

@@ -43,14 +43,19 @@ class MyProfileView(generics.RetrieveUpdateAPIView):
     Get or update current user's profile.
     """
     permission_classes = [IsAuthenticated]
-    
+
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
             return ProfileUpdateSerializer
         return ProfileSerializer
-    
+
     def get_object(self):
         return self.request.user.profile
+
+    def perform_update(self, serializer):
+        profile = serializer.save()
+        # Recalculate profile score after update
+        profile.calculate_profile_score()
 
 
 class ProfileDetailView(generics.RetrieveAPIView):
@@ -189,6 +194,7 @@ class PhotoUploadView(views.APIView):
             profile=profile,
             image=image,
             is_primary=is_primary,
+            is_approved=True,  # Auto-approve for now
             display_order=current_count
         )
         

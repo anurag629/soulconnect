@@ -20,10 +20,12 @@ export interface ProfileData {
     first_name: string
     last_name: string
   }
+  full_name?: string
   photos: Array<{
     id: string
     image_url: string
     is_primary: boolean
+    is_approved?: boolean
   }>
   about_me: string
   date_of_birth: string
@@ -32,11 +34,12 @@ export interface ProfileData {
   height_display?: string
   religion: string
   caste: string
-  mother_tongue: string
+  sub_caste?: string
   education: string
   profession: string
   annual_income: string
   city: string
+  district?: string
   state: string
   is_verified: boolean
   is_premium?: boolean
@@ -69,12 +72,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     return null
   }
 
-  const photos = profile.photos || []
+  const photos = (profile.photos || []).filter(p => p.is_approved !== false)
   const profilePhoto = photos.find((p) => p.is_primary) || photos[0]
   const age = profile.age || calculateAge(profile.date_of_birth)
   const heightFormatted = profile.height_display || formatHeight(profile.height_cm || 0)
   const firstName = profile.user.first_name || ''
   const lastName = profile.user.last_name || ''
+  const displayName = profile.full_name || `${firstName} ${lastName}`.trim()
 
   // Compact variant for lists
   if (variant === 'compact') {
@@ -213,7 +217,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <Badge variant="default">{heightFormatted}</Badge>
             <Badge variant="default">{profile.religion}</Badge>
             {profile.caste && <Badge variant="default">{profile.caste}</Badge>}
-            <Badge variant="default">{profile.mother_tongue}</Badge>
             <Badge variant="default">{formatIncome(profile.annual_income)}</Badge>
           </div>
 

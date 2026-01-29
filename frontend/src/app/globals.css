@@ -107,3 +107,30 @@
 .decorative-border {
   border-image: url('/patterns/border-pattern.svg') 30 round;
 }
+
+/* Mobile-first utilities */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area for notched phones */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Touch feedback for mobile */
+@media (hover: none) {
+  .btn-primary:active {
+    @apply bg-primary-700 scale-[0.98];
+  }
+  .btn-outline:active {
+    @apply bg-primary-50 scale-[0.98];
+  }
+}

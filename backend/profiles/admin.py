@@ -41,15 +41,15 @@ class ProfileAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('User', {'fields': ('user',)}),
-        ('Basic Info', {'fields': ('full_name', 'gender', 'date_of_birth')}),
-        ('Physical', {'fields': ('height_cm', 'body_type', 'complexion')}),
+        ('Basic Info', {'fields': ('full_name', 'gender', 'date_of_birth', 'height_cm')}),
         ('Personal', {'fields': (
-            'marital_status', 'religion', 'caste', 'sub_caste', 'mother_tongue'
+            'marital_status', 'religion', 'caste', 'sub_caste', 'gotra'
         )}),
         ('Education & Career', {'fields': (
             'education', 'education_detail', 'profession', 'company_name', 'annual_income'
         )}),
-        ('Location', {'fields': ('city', 'state', 'country', 'pincode')}),
+        ('Present Address', {'fields': ('state', 'district', 'city', 'country', 'pincode')}),
+        ('Native Address', {'fields': ('native_state', 'native_district', 'native_area')}),
         ('Family', {'fields': (
             'father_name', 'father_occupation', 'mother_name', 'mother_occupation',
             'siblings', 'family_type', 'family_values'

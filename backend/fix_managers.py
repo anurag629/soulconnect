@@ -1,9 +1,6 @@
 """
-Script to create two manager accounts with fixed credentials.
-Run this script once to seed the manager accounts.
-
-Usage: python manage.py shell < create_managers.py
-Or: python manage.py runscript create_managers (if using django-extensions)
+Script to fix and verify manager accounts.
+This ensures managers have correct credentials and settings.
 """
 
 import os
@@ -31,19 +28,20 @@ MANAGERS = [
     },
 ]
 
-def create_managers():
-    """Create manager accounts if they don't exist."""
+def fix_managers():
+    """Fix manager accounts - ensure they exist with correct credentials."""
+    fixed_count = 0
     created_count = 0
-    existing_count = 0
     
     for manager_data in MANAGERS:
         email = manager_data['email']
+        password = manager_data['password']
         
-        # Check if manager already exists
+        # Check if manager exists
         if User.objects.filter(email=email).exists():
             user = User.objects.get(email=email)
-            # Always update password and settings to ensure correct credentials
-            user.set_password(manager_data['password'])
+            # Update password and all manager settings
+            user.set_password(password)
             user.is_manager = True
             user.is_active = True
             user.is_email_verified = True
@@ -51,13 +49,13 @@ def create_managers():
             user.is_profile_approved = True
             user.is_staff = True  # Allow access to admin
             user.save()
-            print(f"[OK] Updated manager account: {email}")
-            existing_count += 1
+            print(f"[FIXED] Updated manager account: {email}")
+            fixed_count += 1
         else:
             # Create new manager
             user = User.objects.create_user(
                 email=email,
-                password=manager_data['password'],
+                password=password,
                 first_name=manager_data['first_name'],
                 last_name=manager_data['last_name'],
                 is_manager=True,
@@ -67,19 +65,31 @@ def create_managers():
                 is_profile_approved=True,
                 is_staff=True,  # Allow access to admin
             )
-            print(f"[OK] Created manager account: {email}")
+            print(f"[CREATED] New manager account: {email}")
             created_count += 1
     
     print(f"\n{'='*50}")
-    print(f"Manager Creation Summary:")
+    print(f"Manager Fix Summary:")
+    print(f"  Fixed: {fixed_count}")
     print(f"  Created: {created_count}")
-    print(f"  Already existed: {existing_count}")
     print(f"{'='*50}")
     print(f"\nManager Credentials:")
     for manager_data in MANAGERS:
         print(f"  Email: {manager_data['email']}")
         print(f"  Password: {manager_data['password']}")
         print()
+    
+    # Verify managers can authenticate
+    print("Verifying manager authentication...")
+    from django.contrib.auth import authenticate
+    for manager_data in MANAGERS:
+        email = manager_data['email']
+        password = manager_data['password']
+        user = authenticate(username=email, password=password)
+        if user and user.is_manager:
+            print(f"  [OK] {email} - Authentication successful")
+        else:
+            print(f"  [FAIL] {email} - Authentication failed")
 
 if __name__ == '__main__':
-    create_managers()
+    fix_managers()

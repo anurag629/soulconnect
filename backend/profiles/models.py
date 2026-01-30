@@ -263,18 +263,38 @@ class Profile(models.Model):
             if has_value(value):
                 score += 1
 
-        # Photos completion: 1+ photos = complete (10 points), 0 photos = incomplete (0 points)
+        # Photos completion: REQUIRED for profile completion
+        # Photos are mandatory - profile cannot be complete without at least 1 photo
         photo_count = self.photos.filter(is_approved=True).count()
-        if photo_count >= 1:
-            score += 10  # Full points for having at least 1 approved photo
+        if photo_count >= 3:
+            score += 10  # Full points for 3+ photos
+        elif photo_count == 2:
+            score += 7   # 7 points for 2 photos
+        elif photo_count == 1:
+            score += 5   # 5 points for 1 photo
+        # 0 photos = 0 points AND cap score at 90 (cannot reach 100 without photos)
+        
+        # Payment verification: REQUIRED for profile completion
+        # Payment is mandatory - profile cannot be complete without verified payment
+        verified_payment = self.payments.filter(status='verified').exists()
+        if verified_payment:
+            score += 10  # 10 points for verified payment
+        # No verified payment = 0 points AND cap score at 90 (cannot reach 100 without payment)
 
         # Calculate maximum possible score
         # Core required: 14 fields × 5 = 70 points
         # Additional required: 3 fields × 3 = 9 points
         # Optional: 18 fields × 1 = 18 points
-        # Photos: 10 points
-        # Total maximum: 107 points, capped at 100
-
+        # Photos: 10 points (max) - REQUIRED
+        # Payment: 10 points - REQUIRED
+        # Total maximum: 117 points
+        
+        # IMPORTANT: Profile cannot be complete (100%) without both photos AND payment
+        # Cap score at 90 if missing photos or payment
+        max_score_without_requirements = 90
+        if photo_count == 0 or not verified_payment:
+            score = min(score, max_score_without_requirements)
+        
         self.profile_score = min(score, 100)
         self.save(update_fields=['profile_score'])
         return self.profile_score
@@ -591,6 +611,9 @@ class ProfilePayment(models.Model):
         self.verified_by = verified_by_user
         self.verified_at = timezone.now()
         self.save()
+        
+        # Recalculate profile score to include verified payment
+        self.profile.calculate_profile_score()
         
         # Update user's profile completion status
         user = self.profile.user

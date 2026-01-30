@@ -86,10 +86,18 @@ class ProfilePhotoAdmin(admin.ModelAdmin):
     @admin.action(description='Approve selected photos')
     def approve_photos(self, request, queryset):
         queryset.update(is_approved=True, is_rejected=False)
+        # Recalculate profile scores for affected profiles
+        profiles_to_update = set(photo.profile for photo in queryset)
+        for profile in profiles_to_update:
+            profile.calculate_profile_score()
     
     @admin.action(description='Reject selected photos')
     def reject_photos(self, request, queryset):
         queryset.update(is_rejected=True, is_approved=False)
+        # Recalculate profile scores for affected profiles
+        profiles_to_update = set(photo.profile for photo in queryset)
+        for profile in profiles_to_update:
+            profile.calculate_profile_score()
 
 
 @admin.register(GovernmentID)

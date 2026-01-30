@@ -202,36 +202,78 @@ class Profile(models.Model):
         return f"{int(feet)}'{int(inches)}\""
     
     def calculate_profile_score(self):
-        """Calculate profile completeness score (0-100)."""
+        """
+        Calculate profile completeness score (0-100) based on ALL edit profile fields.
+        Every field in the edit profile section contributes to the score.
+        """
         score = 0
 
-        # Required fields (5 points each, 14 fields = 70 points max)
-        required_fields = [
+        def has_value(value):
+            """Check if a field has a meaningful value."""
+            if value is None:
+                return False
+            if isinstance(value, (int, float)):
+                return value > 0  # For numeric fields like height_cm
+            value_str = str(value).strip()
+            return bool(value_str and value_str.lower() not in ['not specified', ''])
+
+        # Core Required Fields (5 points each) - Essential profile information
+        # These are the most important fields that must be filled
+        core_required_fields = [
             'full_name', 'gender', 'date_of_birth', 'height_cm', 'marital_status',
             'religion', 'education', 'profession', 'annual_income',
             'city', 'state', 'district', 'diet', 'about_me'
         ]
 
-        for field in required_fields:
-            if getattr(self, field, None):
+        for field in core_required_fields:
+            value = getattr(self, field, None)
+            if has_value(value):
                 score += 5
 
-        # Optional fields (1 point each, 20 fields = 20 points max)
+        # Additional Required Fields (3 points each) - Important but slightly less critical
+        # These fields enhance profile quality significantly
+        additional_required_fields = [
+            'phone_number',  # Contact information
+            'smoking', 'drinking',  # Lifestyle choices
+        ]
+
+        for field in additional_required_fields:
+            value = getattr(self, field, None)
+            if has_value(value):
+                score += 3
+
+        # Optional Fields (1 point each) - All other edit profile fields
+        # Every field from the edit profile form is included here
         optional_fields = [
-            'caste', 'sub_caste', 'gotra', 'education_detail', 'company_name',
+            # Religious & Background details
+            'caste', 'sub_caste', 'gotra', 'manglik', 'star_sign',
+            'birth_place', 'birth_time',
+            # Education & Career details
+            'education_detail', 'company_name',
+            # Family details
             'father_name', 'father_occupation', 'mother_name', 'mother_occupation',
             'siblings', 'family_type', 'family_values',
+            # Location details
             'native_state', 'native_district', 'native_area',
-            'birth_place', 'birth_time', 'phone_number', 'manglik', 'star_sign'
+            'country', 'pincode',  # Present address details
         ]
 
         for field in optional_fields:
-            if getattr(self, field, None):
+            value = getattr(self, field, None)
+            if has_value(value):
                 score += 1
 
-        # Bonus for photos (max 10 points) - count all photos, not just approved
-        photo_count = self.photos.count()
-        score += min(photo_count * 2, 10)
+        # Photos completion: 1+ photos = complete (10 points), 0 photos = incomplete (0 points)
+        photo_count = self.photos.filter(is_approved=True).count()
+        if photo_count >= 1:
+            score += 10  # Full points for having at least 1 approved photo
+
+        # Calculate maximum possible score
+        # Core required: 14 fields × 5 = 70 points
+        # Additional required: 3 fields × 3 = 9 points
+        # Optional: 18 fields × 1 = 18 points
+        # Photos: 10 points
+        # Total maximum: 107 points, capped at 100
 
         self.profile_score = min(score, 100)
         self.save(update_fields=['profile_score'])
@@ -493,3 +535,71 @@ class BlockedProfile(models.Model):
     
     def __str__(self):
         return f"{self.blocker.full_name} blocked {self.blocked.full_name}"
+
+
+class ProfilePayment(models.Model):
+    """
+    Track profile registration payments via UPI.
+    """
+    
+    PAYMENT_STATUS = [
+        ('pending', 'Pending Verification'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name='payments'
+    )
+    
+    # Payment details
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=1000.00)
+    transaction_id = models.CharField(max_length=100, unique=True, help_text="UPI Transaction ID / UTR Number")
+    payment_screenshot = models.ImageField(upload_to='payment_screenshots/%Y/%m/', blank=True, null=True)
+    
+    # Status
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default='pending')
+    verified_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='verified_payments'
+    )
+    rejection_reason = models.CharField(max_length=200, blank=True)
+    
+    # Timestamps
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    verified_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'profile payment'
+        verbose_name_plural = 'profile payments'
+        ordering = ['-submitted_at']
+    
+    def __str__(self):
+        return f"Payment by {self.profile.full_name} - {self.transaction_id}"
+    
+    def verify(self, verified_by_user):
+        """Verify the payment and update profile completion status."""
+        from django.utils import timezone
+        
+        self.status = 'verified'
+        self.verified_by = verified_by_user
+        self.verified_at = timezone.now()
+        self.save()
+        
+        # Update user's profile completion status
+        user = self.profile.user
+        user.is_profile_complete = True
+        user.is_profile_approved = True
+        user.save(update_fields=['is_profile_complete', 'is_profile_approved'])
+    
+    def reject(self, reason=''):
+        """Reject the payment."""
+        self.status = 'rejected'
+        self.rejection_reason = reason
+        self.save()

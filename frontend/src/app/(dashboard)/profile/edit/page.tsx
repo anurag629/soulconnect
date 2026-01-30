@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, Loader2 } from 'lucide-react'
+import Image from 'next/image'
+import { ChevronLeft, Loader2, CheckCircle, Clock, XCircle, CreditCard, Copy, Check } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import toast from 'react-hot-toast'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
@@ -91,7 +92,24 @@ const TABS = [
   { id: 'background', label: 'Background' },
   { id: 'family', label: 'Family' },
   { id: 'location', label: 'Location' },
+  { id: 'payment', label: 'Payment' },
 ]
+
+// Payment status type
+interface PaymentStatus {
+  has_payment: boolean
+  payment: {
+    id: string
+    amount: string
+    transaction_id: string
+    status: 'pending' | 'verified' | 'rejected'
+    rejection_reason?: string
+    submitted_at: string
+    verified_at?: string
+  } | null
+  is_profile_complete: boolean
+  is_profile_approved: boolean
+}
 
 export default function ProfileEditPage() {
   const router = useRouter()
@@ -99,6 +117,14 @@ export default function ProfileEditPage() {
   const [activeTab, setActiveTab] = useState('basic')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  
+  // Payment state
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(null)
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false)
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
+  const [transactionId, setTransactionId] = useState('')
+  const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null)
+  const [upiCopied, setUpiCopied] = useState(false)
 
   const { register, handleSubmit, reset, formState: { isDirty } } = useForm()
 
@@ -154,6 +180,8 @@ export default function ProfileEditPage() {
         state: profile.state || '',
         district: profile.district || '',
         city: profile.city || '',
+        country: profile.country || 'India',
+        pincode: profile.pincode || '',
         // Native Address
         native_state: profile.native_state || '',
         native_district: profile.native_district || '',
@@ -161,6 +189,66 @@ export default function ProfileEditPage() {
       })
     }
   }, [profile, reset])
+
+  // Fetch payment status when payment tab is active
+  useEffect(() => {
+    if (activeTab === 'payment') {
+      fetchPaymentStatus()
+    }
+  }, [activeTab])
+
+  const fetchPaymentStatus = async () => {
+    setIsLoadingPayment(true)
+    try {
+      const response = await profileAPI.getPaymentStatus()
+      setPaymentStatus(response.data)
+    } catch (error) {
+      console.error('Failed to fetch payment status:', error)
+    } finally {
+      setIsLoadingPayment(false)
+    }
+  }
+
+  const handleCopyUPI = async () => {
+    const upiId = 'sschauhanetw@okaxis'
+    try {
+      await navigator.clipboard.writeText(upiId)
+      setUpiCopied(true)
+      toast.success('UPI ID copied to clipboard!')
+      setTimeout(() => setUpiCopied(false), 2000)
+    } catch (error) {
+      toast.error('Failed to copy UPI ID')
+    }
+  }
+
+  const handlePaymentSubmit = async () => {
+    if (!transactionId.trim()) {
+      toast.error('Please enter the transaction ID / UTR number')
+      return
+    }
+
+    setIsSubmittingPayment(true)
+    try {
+      const formData = new FormData()
+      formData.append('transaction_id', transactionId.trim())
+      if (paymentScreenshot) {
+        formData.append('payment_screenshot', paymentScreenshot)
+      }
+
+      await profileAPI.submitPayment(formData)
+      toast.success('Payment submitted successfully! Verification pending.')
+      setTransactionId('')
+      setPaymentScreenshot(null)
+      await fetchPaymentStatus()
+    } catch (error: any) {
+      const message = error.response?.data?.transaction_id?.[0] || 
+                     error.response?.data?.error || 
+                     'Failed to submit payment'
+      toast.error(message)
+    } finally {
+      setIsSubmittingPayment(false)
+    }
+  }
 
   const onSubmit = async (data: any) => {
     setIsSaving(true)
@@ -176,6 +264,32 @@ export default function ProfileEditPage() {
       toast.error(error.response?.data?.detail || 'Failed to update')
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const getPaymentStatusIcon = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return <CheckCircle className="h-5 w-5 text-green-500" />
+      case 'pending':
+        return <Clock className="h-5 w-5 text-yellow-500" />
+      case 'rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />
+      default:
+        return null
+    }
+  }
+
+  const getPaymentStatusText = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return 'Payment Verified'
+      case 'pending':
+        return 'Verification Pending'
+      case 'rejected':
+        return 'Payment Rejected'
+      default:
+        return status
     }
   }
 
@@ -201,9 +315,11 @@ export default function ProfileEditPage() {
             onClick={() => setActiveTab(tab.id)}
             className={cn(
               'flex-1 px-3 py-2 text-sm font-medium rounded-md transition whitespace-nowrap',
-              activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+              activeTab === tab.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600',
+              tab.id === 'payment' && 'flex items-center justify-center gap-1'
             )}
           >
+            {tab.id === 'payment' && <CreditCard className="h-4 w-4" />}
             {tab.label}
           </button>
         ))}
@@ -337,6 +453,10 @@ export default function ProfileEditPage() {
                     <Input label="District" {...register('district')} />
                     <Input label="City/Area" {...register('city')} />
                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Input label="Country" {...register('country')} defaultValue="India" />
+                    <Input label="Pincode" {...register('pincode')} />
+                  </div>
                 </div>
               </div>
 
@@ -359,15 +479,202 @@ export default function ProfileEditPage() {
           </Card>
         )}
 
-        {/* Save Button at Bottom */}
-        <Button
-          type="submit"
-          className="w-full mt-4"
-          isLoading={isSaving}
-          disabled={!isDirty}
-        >
-          Save Changes
-        </Button>
+        {/* Payment Tab */}
+        {activeTab === 'payment' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <CreditCard className="h-5 w-5" />
+                Profile Registration Payment
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {isLoadingPayment ? (
+                <div className="flex justify-center py-8">
+                  <Spinner size="lg" />
+                </div>
+              ) : (
+                <>
+                  {/* Payment Status */}
+                  {paymentStatus?.has_payment && paymentStatus.payment && (
+                    <div className={cn(
+                      'p-4 rounded-lg border',
+                      paymentStatus.payment.status === 'verified' && 'bg-green-50 border-green-200',
+                      paymentStatus.payment.status === 'pending' && 'bg-yellow-50 border-yellow-200',
+                      paymentStatus.payment.status === 'rejected' && 'bg-red-50 border-red-200'
+                    )}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {getPaymentStatusIcon(paymentStatus.payment.status)}
+                        <span className="font-medium">{getPaymentStatusText(paymentStatus.payment.status)}</span>
+                      </div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>Transaction ID: <span className="font-mono">{paymentStatus.payment.transaction_id}</span></p>
+                        <p>Amount: ₹{paymentStatus.payment.amount}</p>
+                        <p>Submitted: {new Date(paymentStatus.payment.submitted_at).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}</p>
+                        {paymentStatus.payment.status === 'rejected' && paymentStatus.payment.rejection_reason && (
+                          <p className="text-red-600 mt-2">Reason: {paymentStatus.payment.rejection_reason}</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Show payment form if no verified payment */}
+                  {(!paymentStatus?.has_payment || paymentStatus?.payment?.status === 'rejected') && (
+                    <>
+                      {/* Payment Info */}
+                      <div className="bg-gradient-to-br from-rose-50 to-pink-50 p-4 rounded-lg border border-rose-200">
+                        <h3 className="font-semibold text-gray-900 mb-2">Registration Fee: ₹1,000</h3>
+                        <p className="text-sm text-gray-600">
+                          Complete your profile registration by making a payment of ₹1,000. 
+                          Your profile will be activated after payment verification.
+                        </p>
+                      </div>
+
+                      {/* QR Code Section */}
+                      <div className="text-center">
+                        <h4 className="font-medium text-gray-900 mb-4">Scan QR Code to Pay</h4>
+                        <div className="inline-block bg-white p-4 rounded-xl shadow-lg border">
+                          {/* QR Code Image */}
+                          <div className="relative w-64 h-64 mx-auto bg-white rounded-lg overflow-hidden">
+                            <Image
+                              src="/images/payment-qr.png.jpeg"
+                              alt="Payment QR Code"
+                              width={256}
+                              height={256}
+                              className="object-contain"
+                              priority
+                              onError={(e) => {
+                                // Fallback if image not found
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML = `
+                                    <div class="flex flex-col items-center justify-center h-64 bg-gray-100 rounded-lg">
+                                      <p class="text-gray-500 text-sm">QR Code Image</p>
+                                      <p class="text-xs text-gray-400 mt-1">QR code image not found</p>
+                                    </div>
+                                  `;
+                                }
+                              }}
+                            />
+                          </div>
+                          
+                          {/* UPI Details */}
+                          <div className="mt-4 pt-4 border-t">
+                            <p className="text-sm text-gray-600 mb-2">UPI ID:</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-mono text-lg font-semibold text-gray-900">sschauhanetw@okaxis</p>
+                              <button
+                                onClick={handleCopyUPI}
+                                className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors group"
+                                title="Copy UPI ID"
+                                type="button"
+                              >
+                                {upiCopied ? (
+                                  <Check className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <Copy className="h-4 w-4 text-gray-600 group-hover:text-gray-900" />
+                                )}
+                              </button>
+                            </div>
+                            <p className="text-sm text-gray-600 mt-2">Name: Sanjay Singh Chauhan</p>
+                          </div>
+                        </div>
+                        
+                        <p className="text-xs text-gray-500 mt-4">
+                          Scan with any UPI app: Google Pay, PhonePe, Paytm, etc.
+                        </p>
+                      </div>
+
+                      {/* Transaction ID Input */}
+                      <div className="border-t pt-6">
+                        <h4 className="font-medium text-gray-900 mb-4">Submit Payment Details</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 mb-1 block">
+                              Transaction ID / UTR Number <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={transactionId}
+                              onChange={(e) => setTransactionId(e.target.value)}
+                              placeholder="Enter 12-digit UTR number"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              You can find the UTR number in your payment app transaction history
+                            </p>
+                          </div>
+                          
+                          <div>
+                            <label className="text-sm font-medium text-gray-700 mb-1 block">
+                              Payment Screenshot (Optional)
+                            </label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => setPaymentScreenshot(e.target.files?.[0] || null)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Upload a screenshot of your payment confirmation (helps in faster verification)
+                            </p>
+                          </div>
+
+                          <Button
+                            type="button"
+                            onClick={handlePaymentSubmit}
+                            className="w-full"
+                            disabled={isSubmittingPayment || !transactionId.trim()}
+                          >
+                            {isSubmittingPayment ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                Submitting...
+                              </>
+                            ) : (
+                              'Submit Payment for Verification'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Success message for verified payment */}
+                  {paymentStatus?.payment?.status === 'verified' && (
+                    <div className="text-center py-4">
+                      <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900">Payment Verified!</h3>
+                      <p className="text-gray-600 mt-2">
+                        Your profile registration is complete. You can now access all features.
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Save Button at Bottom (not shown for payment tab) */}
+        {activeTab !== 'payment' && (
+          <Button
+            type="submit"
+            className="w-full mt-4"
+            isLoading={isSaving}
+            disabled={!isDirty}
+          >
+            Save Changes
+          </Button>
+        )}
       </form>
     </div>
   )

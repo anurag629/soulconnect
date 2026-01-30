@@ -59,47 +59,9 @@ const TabsContent = React.forwardRef<
 ))
 TabsContent.displayName = TabsPrimitive.Content.displayName
 
-// Underlined Tabs variant
-const TabsListUnderlined = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      'flex border-b border-gray-200 space-x-8',
-      className
-    )}
-    {...props}
-  />
-))
-TabsListUnderlined.displayName = 'TabsListUnderlined'
-
-const TabsTriggerUnderlined = React.forwardRef<
-  React.ElementRef<typeof TabsPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(
-      'relative pb-4 text-sm font-medium text-gray-500 transition-colors',
-      'hover:text-gray-700',
-      'focus-visible:outline-none',
-      'disabled:pointer-events-none disabled:opacity-50',
-      'data-[state=active]:text-primary-600',
-      'data-[state=active]:after:absolute data-[state=active]:after:bottom-0 data-[state=active]:after:left-0 data-[state=active]:after:right-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-primary-600',
-      className
-    )}
-    {...props}
-  />
-))
-TabsTriggerUnderlined.displayName = 'TabsTriggerUnderlined'
-
 export {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent,
-  TabsListUnderlined,
-  TabsTriggerUnderlined,
 }

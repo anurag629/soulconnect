@@ -74,21 +74,6 @@ const CardTitle = React.forwardRef<HTMLHeadingElement, CardTitleProps>(
 
 CardTitle.displayName = 'CardTitle'
 
-// Card Description
-interface CardDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
-
-const CardDescription = React.forwardRef<HTMLParagraphElement, CardDescriptionProps>(
-  ({ className, ...props }, ref) => (
-    <p
-      ref={ref}
-      className={cn('text-sm text-gray-500', className)}
-      {...props}
-    />
-  )
-)
-
-CardDescription.displayName = 'CardDescription'
-
 // Card Content
 interface CardContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -100,19 +85,4 @@ const CardContent = React.forwardRef<HTMLDivElement, CardContentProps>(
 
 CardContent.displayName = 'CardContent'
 
-// Card Footer
-interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn('flex items-center pt-4', className)}
-      {...props}
-    />
-  )
-)
-
-CardFooter.displayName = 'CardFooter'
-
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
+export { Card, CardHeader, CardTitle, CardContent }

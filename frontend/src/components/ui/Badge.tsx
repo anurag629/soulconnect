@@ -66,31 +66,6 @@ const Badge: React.FC<BadgeProps> = ({
   )
 }
 
-// Subscription Badge
-interface SubscriptionBadgeProps {
-  plan: 'free' | 'premium' | 'elite'
-  size?: 'sm' | 'md' | 'lg'
-}
-
-const SubscriptionBadge: React.FC<SubscriptionBadgeProps> = ({
-  plan,
-  size = 'md',
-}) => {
-  const plans = {
-    free: { label: 'Free', variant: 'default' as const },
-    premium: { label: 'Premium', variant: 'primary' as const },
-    elite: { label: 'Elite', variant: 'secondary' as const },
-  }
-
-  const { label, variant } = plans[plan]
-
-  return (
-    <Badge variant={variant} size={size}>
-      {label}
-    </Badge>
-  )
-}
-
 // Verification Badge
 interface VerificationBadgeProps {
   verified: boolean
@@ -121,4 +96,4 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   )
 }
 
-export { Badge, SubscriptionBadge, VerificationBadge }
+export { Badge, VerificationBadge }

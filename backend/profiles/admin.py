@@ -4,7 +4,7 @@ Admin configuration for profiles app.
 
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Profile, PartnerPreference, ProfilePhoto, GovernmentID, ProfileView, BlockedProfile
+from .models import Profile, PartnerPreference, ProfilePhoto, GovernmentID, ProfileView, BlockedProfile, ProfilePayment
 
 
 class ProfilePhotoInline(admin.TabularInline):
@@ -129,3 +129,35 @@ class BlockedProfileAdmin(admin.ModelAdmin):
     list_display = ['blocker', 'blocked', 'blocked_at']
     list_filter = ['blocked_at']
     search_fields = ['blocker__full_name', 'blocked__full_name']
+
+
+@admin.register(ProfilePayment)
+class ProfilePaymentAdmin(admin.ModelAdmin):
+    list_display = ['profile', 'amount', 'transaction_id', 'status', 'submitted_at', 'verified_at']
+    list_filter = ['status', 'submitted_at']
+    search_fields = ['profile__full_name', 'profile__user__email', 'transaction_id']
+    readonly_fields = ['submitted_at', 'verified_at', 'verified_by', 'screenshot_preview']
+    actions = ['verify_payments', 'reject_payments']
+    
+    fieldsets = (
+        ('Payment Info', {'fields': ('profile', 'amount', 'transaction_id', 'payment_screenshot', 'screenshot_preview')}),
+        ('Status', {'fields': ('status', 'rejection_reason', 'verified_by')}),
+        ('Dates', {'fields': ('submitted_at', 'verified_at')}),
+    )
+    
+    def screenshot_preview(self, obj):
+        if obj.payment_screenshot:
+            return format_html('<img src="{}" width="300" />', obj.payment_screenshot.url)
+        return "No screenshot uploaded"
+    screenshot_preview.short_description = "Screenshot Preview"
+    
+    @admin.action(description='Verify selected payments')
+    def verify_payments(self, request, queryset):
+        for payment in queryset.filter(status='pending'):
+            payment.verify(request.user)
+        self.message_user(request, f'{queryset.count()} payment(s) verified successfully.')
+    
+    @admin.action(description='Reject selected payments')
+    def reject_payments(self, request, queryset):
+        queryset.update(status='rejected')
+        self.message_user(request, f'{queryset.count()} payment(s) rejected.')

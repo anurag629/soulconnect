@@ -42,11 +42,6 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'profiles',
-    'matching',
-    'chat',
-    'payments',
-    'reports',
-    'admin_panel',
 ]
 
 MIDDLEWARE = [
@@ -279,7 +274,7 @@ FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:3000')
 
 # Profile Settings
 MAX_PROFILE_PHOTOS = 6
-MIN_PROFILE_PHOTOS = 3
+MIN_PROFILE_PHOTOS = 1  # Only 1 photo required for completion
 ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp']
 MAX_IMAGE_SIZE_MB = 5
 

@@ -16,11 +16,6 @@ urlpatterns = [
     # API v1 endpoints
     path('api/v1/auth/', include('accounts.urls')),
     path('api/v1/profiles/', include('profiles.urls')),
-    path('api/v1/matching/', include('matching.urls')),
-    path('api/v1/chat/', include('chat.urls')),
-    path('api/v1/payments/', include('payments.urls')),
-    path('api/v1/reports/', include('reports.urls')),
-    path('api/v1/admin-panel/', include('admin_panel.urls')),
 
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

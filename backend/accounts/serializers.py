@@ -180,11 +180,11 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'email', 'first_name', 'last_name', 'full_name',
             'is_email_verified', 'is_profile_complete', 'is_profile_approved',
-            'is_id_verified', 'is_premium', 'last_active', 'created_at'
+            'is_id_verified', 'is_premium', 'is_manager', 'last_active', 'created_at'
         ]
         read_only_fields = [
             'id', 'email', 'is_email_verified', 'is_profile_complete',
-            'is_profile_approved', 'is_id_verified', 'is_premium',
+            'is_profile_approved', 'is_id_verified', 'is_premium', 'is_manager',
             'last_active', 'created_at'
         ]
     

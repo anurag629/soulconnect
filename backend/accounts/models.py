@@ -90,6 +90,13 @@ class User(AbstractUser):
     )
     ban_reason = models.TextField(blank=True, null=True)
     
+    # Manager role
+    is_manager = models.BooleanField(
+        'manager',
+        default=False,
+        help_text='Designates whether this user is a manager with access to search and profile management.'
+    )
+    
     # Verification tokens
     email_verification_token = models.CharField(max_length=100, blank=True, null=True)
     email_verification_sent_at = models.DateTimeField(blank=True, null=True)
@@ -135,6 +142,11 @@ class User(AbstractUser):
             self.is_profile_complete and 
             self.is_profile_approved
         )
+    
+    @property
+    def is_manager_user(self):
+        """Check if user is a manager."""
+        return self.is_manager and self.is_active
 
 
 class EmailVerificationToken(models.Model):

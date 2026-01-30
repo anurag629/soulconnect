@@ -22,6 +22,7 @@ export interface User {
   is_phone_verified: boolean
   is_id_verified: boolean
   is_profile_complete: boolean
+  is_manager: boolean
   profile_photo: string | null
   subscription_type: 'free' | 'premium' | 'elite'
   created_at: string
@@ -242,7 +243,6 @@ export interface Profile {
   birth_place: string
   about_me: string
   phone_number: string
-  whatsapp_number: string
   profile_views: number
   profile_score: number
   photos: ProfilePhoto[]
@@ -315,73 +315,3 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
   clearProfile: () => set({ profile: null, error: null }),
 }))
 
-// Subscription store
-export interface Subscription {
-  id: string
-  plan: SubscriptionPlan
-  status: 'active' | 'expired' | 'cancelled'
-  start_date: string
-  end_date: string
-  auto_renew: boolean
-}
-
-export interface SubscriptionPlan {
-  id: string
-  name: string
-  slug: string
-  code: string
-  price: number
-  duration_months: number
-  duration_days: number
-  features: string[]
-  is_popular: boolean
-  max_daily_likes: number
-  max_daily_messages: number
-  can_see_profile_views: boolean
-  can_see_who_liked: boolean
-  priority_support: boolean
-}
-
-interface SubscriptionState {
-  subscription: Subscription | null
-  plans: SubscriptionPlan[]
-  isLoading: boolean
-
-  fetchSubscription: () => Promise<void>
-  fetchPlans: () => Promise<void>
-  setSubscription: (subscription: Subscription) => void
-}
-
-export const useSubscriptionStore = create<SubscriptionState>((set) => ({
-  subscription: null,
-  plans: [],
-  isLoading: false,
-
-  fetchSubscription: async () => {
-    set({ isLoading: true })
-
-    try {
-      const { paymentAPI } = await import('./api')
-      const response = await paymentAPI.getMySubscription()
-      set({ subscription: response.data, isLoading: false })
-    } catch (error) {
-      set({ subscription: null, isLoading: false })
-    }
-  },
-
-  fetchPlans: async () => {
-    set({ isLoading: true })
-
-    try {
-      const { paymentAPI } = await import('./api')
-      const response = await paymentAPI.getPlans()
-      // Handle both paginated and non-paginated responses
-      const plansData = response.data.results || response.data || []
-      set({ plans: Array.isArray(plansData) ? plansData : [], isLoading: false })
-    } catch (error) {
-      set({ plans: [], isLoading: false })
-    }
-  },
-
-  setSubscription: (subscription: Subscription) => set({ subscription }),
-}))

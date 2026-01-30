@@ -60,9 +60,11 @@ export default function DashboardPage() {
             <Link href="/profile">
               <Button variant="outline">View Profile</Button>
             </Link>
-            <Link href="/search">
-              <Button>Browse Profiles</Button>
-            </Link>
+            {user?.is_manager && (
+              <Link href="/search">
+                <Button>Search Profiles</Button>
+              </Link>
+            )}
           </div>
         </Card>
       ) : (

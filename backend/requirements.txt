@@ -34,6 +34,9 @@ django-anymail[sendgrid]==10.2
 # API Documentation (optional - can disable in prod)
 drf-spectacular==0.27.0
 
+# PDF Generation
+reportlab==4.0.7
+
 # Background Tasks (only if using Celery)
 # celery==5.3.4
 # redis==5.0.1

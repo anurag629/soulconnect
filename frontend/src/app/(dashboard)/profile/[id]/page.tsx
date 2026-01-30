@@ -10,8 +10,6 @@ import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
   ArrowLeft,
-  Heart,
-  X,
   MapPin,
   Briefcase,
   GraduationCap,
@@ -28,13 +26,16 @@ import {
   Star,
   Clock,
   Shield,
-  Crown
+  Crown,
+  Phone,
+  Download
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Loading'
-import { profileAPI, matchingAPI } from '@/lib/api'
+import { profileAPI } from '@/lib/api'
+import { useAuthStore } from '@/lib/store'
 import { toast } from 'react-hot-toast'
 
 interface ProfilePhoto {
@@ -75,6 +76,7 @@ interface ProfileDetail {
   district: string
   city: string
   country: string
+  pincode: string
   // Native Address
   native_state: string
   native_district: string
@@ -96,6 +98,8 @@ interface ProfileDetail {
   star_sign: string
   birth_time: string
   birth_place: string
+  // Contact
+  phone_number: string
   // About
   about_me: string
   photos: ProfilePhoto[]
@@ -140,11 +144,11 @@ export default function ProfileDetailPage() {
   const router = useRouter()
   const profileId = params.id as string
 
+  const { user } = useAuthStore()
   const [profile, setProfile] = useState<ProfileDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
-  const [isLiking, setIsLiking] = useState(false)
-  const [isPassing, setIsPassing] = useState(false)
+  const [isDownloading, setIsDownloading] = useState(false)
 
   useEffect(() => {
     if (profileId) {
@@ -166,35 +170,30 @@ export default function ProfileDetailPage() {
     }
   }
 
-  const handleLike = async () => {
-    if (!profile) return
-    setIsLiking(true)
+  const handleDownloadPDF = async () => {
+    if (!profile || !user?.is_manager) return
+    
+    setIsDownloading(true)
     try {
-      const response = await matchingAPI.likeProfile(profile.id)
-      if (response.data.is_match) {
-        toast.success("It's a match!")
-      } else {
-        toast.success('Interest sent!')
-      }
-      router.back()
+      const response = await profileAPI.downloadProfilePDF(profile.id)
+      
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `profile_${profile.full_name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+      toast.success('Profile downloaded successfully!')
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to send interest')
+      console.error('Failed to download profile:', error)
+      toast.error('Failed to download profile')
     } finally {
-      setIsLiking(false)
-    }
-  }
-
-  const handlePass = async () => {
-    if (!profile) return
-    setIsPassing(true)
-    try {
-      await matchingAPI.passProfile(profile.id)
-      toast.success('Profile passed')
-      router.back()
-    } catch (error: any) {
-      toast.error('Failed to pass profile')
-    } finally {
-      setIsPassing(false)
+      setIsDownloading(false)
     }
   }
 
@@ -235,7 +234,7 @@ export default function ProfileDetailPage() {
   const displayName = profile.full_name || `${profile.user?.first_name} ${profile.user?.last_name}`.trim()
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-4 pb-24">
+    <div className={`max-w-2xl mx-auto px-4 py-4 ${user?.is_manager ? 'pb-24' : ''}`}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <Button variant="outline" size="sm" onClick={() => router.back()}>
@@ -356,16 +355,14 @@ export default function ProfileDetailPage() {
       )}
 
       {/* About Me */}
-      {profile.about_me && (
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="text-base">About Me</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 whitespace-pre-line">{profile.about_me}</p>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-base">About Me</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-600 whitespace-pre-line">{profile.about_me || 'Not specified'}</p>
+        </CardContent>
+      </Card>
 
       {/* Basic Information */}
       <Card className="mb-4">
@@ -374,16 +371,14 @@ export default function ProfileDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
+            <DetailItem icon={<User />} label="Gender" value={profile.gender === 'M' ? 'Male' : profile.gender === 'F' ? 'Female' : formatValue(profile.gender)} />
+            <DetailItem icon={<Clock />} label="Date of Birth" value={profile.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Not specified'} />
             <DetailItem icon={<Ruler />} label="Height" value={profile.height_display} />
             <DetailItem icon={<User />} label="Marital Status" value={formatValue(profile.marital_status)} />
             <DetailItem icon={<BookOpen />} label="Religion" value={formatValue(profile.religion)} />
-            <DetailItem icon={<Users />} label="Caste" value={profile.caste} />
-            {profile.sub_caste && (
-              <DetailItem icon={<Users />} label="Sub-Caste" value={profile.sub_caste} />
-            )}
-            {profile.gotra && (
-              <DetailItem icon={<BookOpen />} label="Gotra" value={profile.gotra} />
-            )}
+            <DetailItem icon={<Users />} label="Caste" value={profile.caste || 'Not specified'} />
+            <DetailItem icon={<Users />} label="Sub-Caste" value={profile.sub_caste || 'Not specified'} />
+            <DetailItem icon={<BookOpen />} label="Gotra" value={profile.gotra || 'Not specified'} />
           </div>
         </CardContent>
       </Card>
@@ -396,13 +391,9 @@ export default function ProfileDetailPage() {
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
             <DetailItem icon={<GraduationCap />} label="Education" value={formatValue(profile.education)} />
-            {profile.education_detail && (
-              <DetailItem icon={<GraduationCap />} label="Degree/College" value={profile.education_detail} />
-            )}
-            <DetailItem icon={<Briefcase />} label="Profession" value={profile.profession} />
-            {profile.company_name && (
-              <DetailItem icon={<Briefcase />} label="Company" value={profile.company_name} />
-            )}
+            <DetailItem icon={<GraduationCap />} label="Degree/College" value={profile.education_detail || 'Not specified'} />
+            <DetailItem icon={<Briefcase />} label="Profession" value={profile.profession || 'Not specified'} />
+            <DetailItem icon={<Briefcase />} label="Company" value={profile.company_name || 'Not specified'} />
             <DetailItem icon={<Briefcase />} label="Annual Income" value={formatIncome(profile.annual_income)} />
           </div>
         </CardContent>
@@ -415,21 +406,11 @@ export default function ProfileDetailPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
-            {profile.father_name && (
-              <DetailItem icon={<User />} label="Father's Name" value={profile.father_name} />
-            )}
-            {profile.father_occupation && (
-              <DetailItem icon={<Briefcase />} label="Father's Occupation" value={profile.father_occupation} />
-            )}
-            {profile.mother_name && (
-              <DetailItem icon={<User />} label="Mother's Name" value={profile.mother_name} />
-            )}
-            {profile.mother_occupation && (
-              <DetailItem icon={<Briefcase />} label="Mother's Occupation" value={profile.mother_occupation} />
-            )}
-            {profile.siblings && (
-              <DetailItem icon={<Users />} label="Siblings" value={profile.siblings} />
-            )}
+            <DetailItem icon={<User />} label="Father's Name" value={profile.father_name || 'Not specified'} />
+            <DetailItem icon={<Briefcase />} label="Father's Occupation" value={profile.father_occupation || 'Not specified'} />
+            <DetailItem icon={<User />} label="Mother's Name" value={profile.mother_name || 'Not specified'} />
+            <DetailItem icon={<Briefcase />} label="Mother's Occupation" value={profile.mother_occupation || 'Not specified'} />
+            <DetailItem icon={<Users />} label="Siblings" value={profile.siblings || 'Not specified'} />
             <DetailItem icon={<Home />} label="Family Type" value={formatValue(profile.family_type)} />
             <DetailItem icon={<Home />} label="Family Values" value={formatValue(profile.family_values)} />
           </div>
@@ -442,21 +423,37 @@ export default function ProfileDetailPage() {
           <CardTitle className="text-base">Location</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
-              <p className="text-xs text-gray-500 mb-1">Present Address</p>
-              <p className="text-sm text-gray-900 font-medium">
-                {formatAddress(profile.city, profile.district, profile.state)}
-              </p>
-            </div>
-            {(profile.native_state || profile.native_district || profile.native_area) && (
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Native Address</p>
-                <p className="text-sm text-gray-900 font-medium">
-                  {formatAddress(profile.native_area, profile.native_district, profile.native_state)}
-                </p>
+              <p className="text-xs text-gray-500 mb-2 font-medium">Present Address</p>
+              <div className="grid grid-cols-2 gap-3">
+                <DetailItem icon={<MapPin />} label="State" value={profile.state || 'Not specified'} />
+                <DetailItem icon={<MapPin />} label="District" value={profile.district || 'Not specified'} />
+                <DetailItem icon={<MapPin />} label="City/Area" value={profile.city || 'Not specified'} />
+                <DetailItem icon={<MapPin />} label="Pincode" value={profile.pincode || 'Not specified'} />
+                <DetailItem icon={<MapPin />} label="Country" value={profile.country || 'Not specified'} />
               </div>
-            )}
+            </div>
+            <div className="border-t pt-4">
+              <p className="text-xs text-gray-500 mb-2 font-medium">Native Address</p>
+              <div className="grid grid-cols-2 gap-3">
+                <DetailItem icon={<MapPin />} label="Native State" value={profile.native_state || 'Not specified'} />
+                <DetailItem icon={<MapPin />} label="Native District" value={profile.native_district || 'Not specified'} />
+                <DetailItem icon={<MapPin />} label="Native Area/Village" value={profile.native_area || 'Not specified'} />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Contact Information */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-base">Contact Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            <DetailItem icon={<Phone />} label="Phone Number" value={profile.phone_number || 'Not specified'} />
           </div>
         </CardContent>
       </Card>
@@ -476,55 +473,37 @@ export default function ProfileDetailPage() {
       </Card>
 
       {/* Horoscope Details */}
-      {(profile.manglik || profile.star_sign || profile.birth_time || profile.birth_place) && (
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="text-base">Horoscope Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {profile.manglik && (
-                <DetailItem icon={<Star />} label="Manglik" value={formatValue(profile.manglik)} />
-              )}
-              {profile.star_sign && (
-                <DetailItem icon={<Star />} label="Star Sign" value={formatValue(profile.star_sign)} />
-              )}
-              {profile.birth_time && (
-                <DetailItem icon={<Clock />} label="Birth Time" value={profile.birth_time} />
-              )}
-              {profile.birth_place && (
-                <DetailItem icon={<MapPin />} label="Birth Place" value={profile.birth_place} />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle className="text-base">Horoscope Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            <DetailItem icon={<Star />} label="Manglik" value={formatValue(profile.manglik)} />
+            <DetailItem icon={<Star />} label="Star Sign (Rashi)" value={formatValue(profile.star_sign)} />
+            <DetailItem icon={<Clock />} label="Birth Time" value={profile.birth_time || 'Not specified'} />
+            <DetailItem icon={<MapPin />} label="Birth Place" value={profile.birth_place || 'Not specified'} />
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Fixed Action Buttons at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 safe-area-bottom">
-        <div className="max-w-2xl mx-auto flex gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            className="flex-1"
-            onClick={handlePass}
-            isLoading={isPassing}
-          >
-            <X className="h-5 w-5 mr-2" />
-            Pass
-          </Button>
-          <Button
-            variant="primary"
-            size="lg"
-            className="flex-1"
-            onClick={handleLike}
-            isLoading={isLiking}
-          >
-            <Heart className="h-5 w-5 mr-2" />
-            Like
-          </Button>
+      {/* Download Profile Button (Manager Only) */}
+      {user?.is_manager && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 safe-area-bottom">
+          <div className="max-w-2xl mx-auto">
+            <Button
+              variant="primary"
+              size="lg"
+              className="w-full"
+              onClick={handleDownloadPDF}
+              isLoading={isDownloading}
+              leftIcon={<Download className="h-5 w-5" />}
+            >
+              {isDownloading ? 'Downloading...' : 'Download Profile PDF'}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

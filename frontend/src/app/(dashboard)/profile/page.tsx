@@ -3,11 +3,11 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Camera, Edit2, MapPin } from 'lucide-react'
+import { User, Camera, Edit2, MapPin, CheckCircle } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
-import { Badge, SubscriptionBadge } from '@/components/ui/Badge'
+import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Loading'
 import { useAuthStore, useProfileStore } from '@/lib/store'
 
@@ -121,9 +121,6 @@ export default function ProfilePage() {
                 <h1 className="text-xl font-bold text-gray-900">
                   {user?.first_name} {user?.last_name}
                 </h1>
-                {user?.subscription_type && user.subscription_type !== 'free' && (
-                  <SubscriptionBadge plan={user.subscription_type} />
-                )}
               </div>
               {(profile.city || profile.district || profile.state) && (
                 <p className="text-sm text-gray-500 flex items-center gap-1">
@@ -279,7 +276,15 @@ export default function ProfilePage() {
       {/* Photos */}
       <Card className="mb-4">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Photos ({photos.length})</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base">Photos ({photos.length})</CardTitle>
+            {photos.length >= 1 && (
+              <Badge variant="success" size="sm" className="flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                Complete
+              </Badge>
+            )}
+          </div>
           <Link href="/profile/photos" className="text-primary-600 text-xs">
             Manage
           </Link>
@@ -300,9 +305,11 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-sm text-gray-500 mb-2">No photos added</p>
+              <Camera className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 mb-1">No photos added</p>
+              <p className="text-xs text-gray-400 mb-3">At least 1 photo required</p>
               <Link href="/profile/photos">
-                <Button variant="outline" size="sm">Add Photos</Button>
+                <Button variant="outline" size="sm">Add Photo</Button>
               </Link>
             </div>
           )}

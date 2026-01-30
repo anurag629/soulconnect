@@ -97,7 +97,17 @@ export default function ProfilePhotosPage() {
 
       await profileAPI.uploadPhoto(formData)
       await fetchProfile()
-      toast.success('Photo uploaded successfully!')
+      
+      // Show completion message if this is the first photo
+      const newPhotoCount = photos.length + 1
+      if (newPhotoCount === 1) {
+        toast.success('Photo uploaded! Photo section is now complete.', {
+          icon: '✅',
+          duration: 4000,
+        })
+      } else {
+        toast.success('Photo uploaded successfully!')
+      }
     } catch (error: any) {
       console.error('Failed to upload photo:', error)
       toast.error(error.response?.data?.detail || 'Failed to upload photo')
@@ -186,19 +196,45 @@ export default function ProfilePhotosPage() {
       />
 
       {/* Photo Guidelines */}
-      <Card className="mb-6 bg-blue-50 border-blue-100">
+      <Card className={cn(
+        "mb-6 border",
+        photos.length >= 1 
+          ? "bg-green-50 border-green-200" 
+          : "bg-blue-50 border-blue-100"
+      )}>
         <CardContent className="p-4">
           <div className="flex gap-3">
-            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
-            <div className="text-sm text-blue-800">
-              <p className="font-medium mb-1">Photo Guidelines:</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-700">
-                <li>Upload clear, recent photos of yourself</li>
-                <li>Face should be clearly visible</li>
-                <li>Avoid group photos or photos with sunglasses</li>
-                <li>Maximum 6 photos, each under 5MB</li>
-                <li>JPG, PNG, or WebP formats only</li>
-              </ul>
+            {photos.length >= 1 ? (
+              <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+            )}
+            <div className={cn(
+              "text-sm",
+              photos.length >= 1 ? "text-green-800" : "text-blue-800"
+            )}>
+              {photos.length >= 1 ? (
+                <>
+                  <p className="font-medium mb-1 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Photo Section Complete!
+                  </p>
+                  <p className="text-green-700 mb-2">
+                    You have uploaded at least 1 photo. Additional photos are optional but recommended.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium mb-1">Photo Guidelines:</p>
+                  <ul className="list-disc list-inside space-y-1 text-blue-700">
+                    <li>Upload at least 1 clear, recent photo of yourself</li>
+                    <li>Face should be clearly visible</li>
+                    <li>Avoid group photos or photos with sunglasses</li>
+                    <li>Maximum 6 photos, each under 5MB</li>
+                    <li>JPG, PNG, or WebP formats only</li>
+                  </ul>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
@@ -292,9 +328,27 @@ export default function ProfilePhotosPage() {
       </div>
 
       {/* Photo Count */}
-      <p className="text-center text-gray-500 mt-6">
-        {photos.length} of {MAX_PHOTOS} photos uploaded
-      </p>
+      <div className="text-center mt-6">
+        <p className={cn(
+          "text-sm font-medium",
+          photos.length >= 1 ? "text-green-600" : "text-gray-500"
+        )}>
+          {photos.length >= 1 ? (
+            <>
+              <CheckCircle className="h-4 w-4 inline mr-1" />
+              {photos.length} photo{photos.length !== 1 ? 's' : ''} uploaded
+              {photos.length < MAX_PHOTOS && ` (${MAX_PHOTOS - photos.length} more optional)`}
+            </>
+          ) : (
+            <>
+              {photos.length} of {MAX_PHOTOS} photos uploaded
+              <span className="block text-xs text-gray-400 mt-1">
+                At least 1 photo required for profile completion
+              </span>
+            </>
+          )}
+        </p>
+      </div>
     </div>
   )
 }

@@ -10,7 +10,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Heart,
-  MessageSquare,
   Search,
   User,
   Bell,
@@ -18,13 +17,11 @@ import {
   LogOut,
   Menu,
   X,
-  CreditCard,
-  Users,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/lib/store'
 import { Avatar } from '@/components/ui/Avatar'
-import { Badge, SubscriptionBadge } from '@/components/ui/Badge'
+import { Badge } from '@/components/ui/Badge'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 
 const Header: React.FC = () => {
@@ -33,11 +30,11 @@ const Header: React.FC = () => {
   const { user, logout } = useAuthStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
+  // Build navigation based on user role
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Heart },
-    { name: 'Search', href: '/search', icon: Search },
-    { name: 'Matches', href: '/matches', icon: Users },
-    { name: 'Messages', href: '/chat', icon: MessageSquare },
+    // Search only visible to managers
+    ...(user?.is_manager ? [{ name: 'Search', href: '/search', icon: Search }] : []),
   ]
 
   const handleLogout = async () => {
@@ -89,13 +86,6 @@ const Header: React.FC = () => {
               <span className="absolute top-1 right-1 h-2 w-2 bg-primary-600 rounded-full" />
             </button>
 
-            {/* Subscription Badge */}
-            {user?.subscription_type && user.subscription_type !== 'free' && (
-              <div className="hidden sm:block">
-                <SubscriptionBadge plan={user.subscription_type} />
-              </div>
-            )}
-
             {/* User Menu */}
             <DropdownMenu.Root>
               <DropdownMenu.Trigger asChild>
@@ -135,16 +125,6 @@ const Header: React.FC = () => {
                       >
                         <User className="h-4 w-4" />
                         My Profile
-                      </Link>
-                    </DropdownMenu.Item>
-
-                    <DropdownMenu.Item asChild>
-                      <Link
-                        href="/subscription"
-                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer outline-none"
-                      >
-                        <CreditCard className="h-4 w-4" />
-                        Subscription
                       </Link>
                     </DropdownMenu.Item>
 

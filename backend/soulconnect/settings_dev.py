@@ -184,7 +184,7 @@ FRONTEND_URL = 'http://localhost:3000'
 
 # Profile Settings
 MAX_PROFILE_PHOTOS = 6
-MIN_PROFILE_PHOTOS = 1
+MIN_PROFILE_PHOTOS = 1  # Only 1 photo required for completion
 ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp']
 MAX_IMAGE_SIZE_MB = 5
 

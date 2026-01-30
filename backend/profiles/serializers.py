@@ -6,7 +6,7 @@ from rest_framework import serializers
 from django.conf import settings
 from .models import (
     Profile, PartnerPreference, ProfilePhoto, 
-    GovernmentID, ProfileView, BlockedProfile
+    GovernmentID, ProfileView, BlockedProfile, ProfilePayment
 )
 
 
@@ -243,3 +243,29 @@ class BlockedProfileSerializer(serializers.ModelSerializer):
         model = BlockedProfile
         fields = ['id', 'blocked', 'blocked_at', 'reason']
         read_only_fields = ['id', 'blocked_at']
+
+
+class ProfilePaymentSerializer(serializers.ModelSerializer):
+    """Serializer for profile payments."""
+    
+    class Meta:
+        model = ProfilePayment
+        fields = [
+            'id', 'amount', 'transaction_id', 'payment_screenshot',
+            'status', 'rejection_reason', 'submitted_at', 'verified_at'
+        ]
+        read_only_fields = ['id', 'amount', 'status', 'rejection_reason', 'submitted_at', 'verified_at']
+
+
+class ProfilePaymentSubmitSerializer(serializers.ModelSerializer):
+    """Serializer for submitting profile payment."""
+    
+    class Meta:
+        model = ProfilePayment
+        fields = ['transaction_id', 'payment_screenshot']
+    
+    def validate_transaction_id(self, value):
+        """Validate transaction ID is unique."""
+        if ProfilePayment.objects.filter(transaction_id=value).exists():
+            raise serializers.ValidationError("This transaction ID has already been submitted.")
+        return value

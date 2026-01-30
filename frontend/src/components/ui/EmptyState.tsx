@@ -8,11 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from './Button'
 import {
   Search,
-  Heart,
-  MessageSquare,
-  Users,
   FileText,
-  Bell,
   LucideIcon,
 } from 'lucide-react'
 
@@ -59,24 +55,6 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 
 // Pre-configured empty states for common scenarios
 
-const NoMatchesEmpty: React.FC<{ onExplore?: () => void }> = ({ onExplore }) => (
-  <EmptyState
-    icon={Heart}
-    title="No matches yet"
-    description="Keep exploring profiles to find your perfect match. When you both like each other, it's a match!"
-    action={onExplore ? { label: 'Explore Profiles', onClick: onExplore } : undefined}
-  />
-)
-
-const NoMessagesEmpty: React.FC<{ onBrowse?: () => void }> = ({ onBrowse }) => (
-  <EmptyState
-    icon={MessageSquare}
-    title="No messages yet"
-    description="Start a conversation with your matches to get to know them better."
-    action={onBrowse ? { label: 'Browse Matches', onClick: onBrowse } : undefined}
-  />
-)
-
 const NoSearchResultsEmpty: React.FC<{ onClear?: () => void }> = ({
   onClear,
 }) => (
@@ -88,50 +66,7 @@ const NoSearchResultsEmpty: React.FC<{ onClear?: () => void }> = ({
   />
 )
 
-const NoProfileViewsEmpty: React.FC = () => (
-  <EmptyState
-    icon={Users}
-    title="No profile views yet"
-    description="Complete your profile and add photos to attract more visitors."
-  />
-)
-
-const NoNotificationsEmpty: React.FC = () => (
-  <EmptyState
-    icon={Bell}
-    title="No notifications"
-    description="You're all caught up! Check back later for new activity."
-  />
-)
-
-const NoShortlistEmpty: React.FC<{ onBrowse?: () => void }> = ({ onBrowse }) => (
-  <EmptyState
-    icon={Heart}
-    title="Your shortlist is empty"
-    description="Save profiles you're interested in to compare them later."
-    action={onBrowse ? { label: 'Browse Profiles', onClick: onBrowse } : undefined}
-  />
-)
-
-const NoInterestsEmpty: React.FC<{ type: 'sent' | 'received' }> = ({ type }) => (
-  <EmptyState
-    icon={Heart}
-    title={type === 'sent' ? 'No interests sent' : 'No interests received'}
-    description={
-      type === 'sent'
-        ? 'Express interest in profiles you like to start a connection.'
-        : 'Complete your profile to attract more interest from other members.'
-    }
-  />
-)
-
 export {
   EmptyState,
-  NoMatchesEmpty,
-  NoMessagesEmpty,
   NoSearchResultsEmpty,
-  NoProfileViewsEmpty,
-  NoNotificationsEmpty,
-  NoShortlistEmpty,
-  NoInterestsEmpty,
 }

@@ -194,9 +194,6 @@ export const profileAPI = {
 
   getProfile: (id: string) => api.get(`/profiles/${id}/`),
 
-  searchProfiles: (params: ProfileSearchParams) =>
-    api.get('/profiles/search/', { params }),
-
   getPartnerPreferences: () => api.get('/profiles/preferences/'),
 
   updatePartnerPreferences: (data: Partial<PartnerPreferenceData>) =>
@@ -217,124 +214,26 @@ export const profileAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  getProfileViews: () => api.get('/profiles/views/'),
-
-  blockProfile: (profileId: string) =>
-    api.post(`/profiles/${profileId}/block/`),
-
-  unblockProfile: (profileId: string) =>
-    api.post(`/profiles/${profileId}/unblock/`),
-
-  getBlockedProfiles: () => api.get('/profiles/blocked/'),
-}
-
-export const matchingAPI = {
-  getRecommendations: (params?: { page?: number }) =>
-    api.get('/matching/recommendations/', { params }),
-
-  likeProfile: (profileId: string, superLike = false) =>
-    api.post('/matching/like/', { profile_id: profileId, like_type: superLike ? 'super_like' : 'like' }),
-
-  passProfile: (profileId: string) =>
-    api.post(`/matching/pass/${profileId}/`),
-
-  getMatches: (params?: { page?: number }) =>
-    api.get('/matching/matches/', { params }),
-
-  unmatch: (matchId: string) =>
-    api.post(`/matching/matches/${matchId}/unmatch/`),
-
-  sendInterest: (profileId: string, message?: string) =>
-    api.post('/matching/interest/', { profile_id: profileId, message }),
-
-  getReceivedInterests: () => api.get('/matching/interests/received/'),
-
-  getSentInterests: () => api.get('/matching/interests/sent/'),
-
-  respondToInterest: (interestId: string, accept: boolean) =>
-    api.post(`/matching/interests/${interestId}/respond/`, { action: accept ? 'accept' : 'decline' }),
-
-  addToShortlist: (profileId: string) =>
-    api.post('/matching/shortlist/', { profile_id: profileId }),
-
-  removeFromShortlist: (profileId: string) =>
-    api.post(`/matching/shortlist/${profileId}/remove/`),
-
-  getShortlist: () => api.get('/matching/shortlist/'),
-
-  getCompatibilityScore: (profileId: string) =>
-    api.get(`/matching/compatibility/${profileId}/`),
-}
-
-export const chatAPI = {
-  getConversations: () => api.get('/chat/conversations/'),
-
-  getConversation: (id: string) => api.get(`/chat/conversations/${id}/`),
-
-  getOrCreateConversation: (matchId: string) =>
-    api.post(`/chat/conversations/match/${matchId}/`),
-
-  getMessages: (conversationId: string, params?: { page?: number }) =>
-    api.get(`/chat/conversations/${conversationId}/messages/`, { params }),
-
-  sendMessage: (conversationId: string, content: string) =>
-    api.post(`/chat/conversations/${conversationId}/send/`, { content }),
-
-  markAsRead: (conversationId: string) =>
-    api.post(`/chat/conversations/${conversationId}/read/`),
-
-  requestChatUnlock: (matchId: string) =>
-    api.post('/chat/requests/send/', { match_id: matchId }),
-
-  getChatRequests: () => api.get('/chat/requests/'),
-
-  respondToChatRequest: (requestId: string, accept: boolean) =>
-    api.post(`/chat/requests/${requestId}/respond/`, { accept }),
-
-  getUnreadCount: () => api.get('/chat/unread/'),
-}
-
-export const paymentAPI = {
-  getPlans: () => api.get('/payments/plans/'),
-
-  createOrder: (data: { plan_id: string; coupon_code?: string }) =>
-    api.post('/payments/create-order/', data),
-
-  verifyPayment: (data: {
-    order_id: string
-    razorpay_payment_id: string
-    razorpay_signature: string
-  }) => api.post('/payments/verify-payment/', data),
-
-  getMySubscription: () => api.get('/payments/subscription/'),
-
-  cancelSubscription: () => api.post('/payments/subscription/cancel/'),
-
-  getPaymentHistory: () => api.get('/payments/history/'),
-
-  getInvoices: () => api.get('/payments/invoices/'),
-
-  downloadInvoice: (invoiceId: string) =>
-    api.get(`/payments/invoices/${invoiceId}/`, {
-      responseType: 'blob',
+  // Profile Payment
+  submitPayment: (formData: FormData) =>
+    api.post('/profiles/payment/submit/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
     }),
 
-  validateCoupon: (code: string, planId: string) =>
-    api.post('/payments/validate-coupon/', { code, plan_id: planId }),
+  getPaymentStatus: () => api.get('/profiles/payment/status/'),
+
+  getPaymentHistory: () => api.get('/profiles/payment/history/'),
+
+  // Manager-only endpoints
+  managerSearch: (params: ManagerSearchParams) =>
+    api.get('/profiles/manager/search/', { params }),
+
+  downloadProfilePDF: (profileId: string) =>
+    api.get(`/profiles/manager/download/${profileId}/`, {
+      responseType: 'blob',
+    }),
 }
 
-export const reportAPI = {
-  submitReport: (data: {
-    reported_user_id: string
-    report_type: string
-    description: string
-  }) => api.post('/reports/submit/', data),
-
-  getMyReports: () => api.get('/reports/my-reports/'),
-
-  submitFeedback: (data: { feedback_type: string; message: string }) =>
-    api.post('/reports/feedback/', data),
-}
 
 // Type definitions - aligned with backend serializers
 export interface ProfileData {
@@ -342,23 +241,27 @@ export interface ProfileData {
   gender: string
   date_of_birth: string
   height_cm: number
-  body_type: string
-  complexion: string
   marital_status: string
   religion: string
   caste: string
   sub_caste: string
-  mother_tongue: string
+  gotra: string
   education: string
   education_detail: string
   profession: string
   company_name: string
   annual_income: string
   city: string
+  district: string
   state: string
   country: string
   pincode: string
+  native_state: string
+  native_district: string
+  native_area: string
+  father_name: string
   father_occupation: string
+  mother_name: string
   mother_occupation: string
   siblings: string
   family_type: string
@@ -372,7 +275,6 @@ export interface ProfileData {
   birth_place: string
   about_me: string
   phone_number: string
-  whatsapp_number: string
 }
 
 export interface PartnerPreferenceData {
@@ -391,7 +293,6 @@ export interface PartnerPreferenceData {
   country: string[]
   state: string[]
   city: string[]
-  mother_tongue: string[]
   diet: string[]
   smoking: string[]
   drinking: string[]
@@ -399,7 +300,8 @@ export interface PartnerPreferenceData {
   additional_preferences: string
 }
 
-export interface ProfileSearchParams {
+export interface ManagerSearchParams {
+  gender?: 'M' | 'F'
   age_from?: number
   age_to?: number
   height_from?: number

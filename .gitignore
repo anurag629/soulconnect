@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 venv/
+venv_new/
 ENV/
 .env
 
@@ -19,6 +20,7 @@ node_modules/
 .next/
 .env.local
 .env*.local
+*.tsbuildinfo
 
 # IDE
 .vscode/

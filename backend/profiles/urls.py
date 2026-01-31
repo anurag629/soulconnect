@@ -8,7 +8,10 @@ from .views import (
     PartnerPreferenceView, PhotoUploadView, PhotoDeleteView, SetPrimaryPhotoView,
     GovernmentIDSubmitView,
     ProfilePaymentSubmitView, ProfilePaymentStatusView, ProfilePaymentListView,
-    ManagerProfileDownloadView
+    ManagerProfileDownloadView,
+    ManagerDashboardView, ManagerPendingProfilesView,
+    ManagerApproveProfileView, ManagerRejectProfileView,
+    ManagerPendingPaymentsView, ManagerVerifyPaymentView, ManagerRejectPaymentView,
 )
 
 app_name = 'profiles'
@@ -38,4 +41,11 @@ urlpatterns = [
     # Manager-only endpoints
     path('manager/search/', ProfileSearchView.as_view(), name='manager_search'),
     path('manager/download/<uuid:profile_id>/', ManagerProfileDownloadView.as_view(), name='manager_download'),
+    path('manager/dashboard/', ManagerDashboardView.as_view(), name='manager_dashboard'),
+    path('manager/pending/', ManagerPendingProfilesView.as_view(), name='manager_pending_profiles'),
+    path('manager/pending/<uuid:pk>/approve/', ManagerApproveProfileView.as_view(), name='manager_approve_profile'),
+    path('manager/pending/<uuid:pk>/reject/', ManagerRejectProfileView.as_view(), name='manager_reject_profile'),
+    path('manager/payments/', ManagerPendingPaymentsView.as_view(), name='manager_pending_payments'),
+    path('manager/payments/<uuid:pk>/verify/', ManagerVerifyPaymentView.as_view(), name='manager_verify_payment'),
+    path('manager/payments/<uuid:pk>/reject/', ManagerRejectPaymentView.as_view(), name='manager_reject_payment'),
 ]

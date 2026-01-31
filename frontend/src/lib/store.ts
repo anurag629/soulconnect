@@ -22,6 +22,7 @@ export interface User {
   is_phone_verified: boolean
   is_id_verified: boolean
   is_profile_complete: boolean
+  is_profile_approved: boolean
   is_manager: boolean
   profile_photo: string | null
   subscription_type: 'free' | 'premium' | 'elite'
@@ -248,6 +249,7 @@ export interface Profile {
   photos: ProfilePhoto[]
   is_verified: boolean
   is_premium: boolean
+  has_submitted_payment: boolean
   created_at: string
   updated_at: string
 }

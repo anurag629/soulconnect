@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ChevronLeft, Loader2, CheckCircle, Clock, XCircle, CreditCard, Copy, Check } from 'lucide-react'
@@ -113,8 +113,9 @@ interface PaymentStatus {
 
 export default function ProfileEditPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { profile, fetchProfile } = useProfileStore()
-  const [activeTab, setActiveTab] = useState('basic')
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'basic')
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   
@@ -240,6 +241,7 @@ export default function ProfileEditPage() {
       setTransactionId('')
       setPaymentScreenshot(null)
       await fetchPaymentStatus()
+      await fetchProfile()
     } catch (error: any) {
       const message = error.response?.data?.transaction_id?.[0] || 
                      error.response?.data?.error || 
@@ -654,7 +656,7 @@ export default function ProfileEditPage() {
                       <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
                       <h3 className="text-lg font-semibold text-gray-900">Payment Verified!</h3>
                       <p className="text-gray-600 mt-2">
-                        Your profile registration is complete. You can now access all features.
+                        Your payment has been verified. Your profile is now under review by the manager.
                       </p>
                     </div>
                   )}

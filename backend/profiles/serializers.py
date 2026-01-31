@@ -74,6 +74,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     height_display = serializers.ReadOnlyField()
     is_verified = serializers.SerializerMethodField()
     is_premium = serializers.SerializerMethodField()
+    has_submitted_payment = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
@@ -91,16 +92,19 @@ class ProfileSerializer(serializers.ModelSerializer):
             'about_me', 'phone_number', 'whatsapp_number',
             'profile_views', 'profile_score',
             'photos',
-            'is_verified', 'is_premium',
+            'is_verified', 'is_premium', 'has_submitted_payment',
             'created_at', 'updated_at'
         ]
         read_only_fields = ['id', 'profile_views', 'profile_score', 'created_at', 'updated_at']
-    
+
     def get_is_verified(self, obj):
         return obj.user.is_id_verified
-    
+
     def get_is_premium(self, obj):
         return obj.user.is_premium
+
+    def get_has_submitted_payment(self, obj):
+        return obj.payments.filter(status__in=['pending', 'verified']).exists()
 
 
 class ProfileCreateSerializer(serializers.ModelSerializer):
@@ -136,11 +140,7 @@ class ProfileCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         profile = Profile.objects.create(**validated_data)
 
-        # Mark user profile as complete
-        profile.user.is_profile_complete = True
-        profile.user.save(update_fields=['is_profile_complete'])
-
-        # Calculate initial profile score
+        # Calculate initial profile score (auto-manages is_profile_complete)
         profile.calculate_profile_score()
 
         return profile
@@ -259,13 +259,55 @@ class ProfilePaymentSerializer(serializers.ModelSerializer):
 
 class ProfilePaymentSubmitSerializer(serializers.ModelSerializer):
     """Serializer for submitting profile payment."""
-    
+
     class Meta:
         model = ProfilePayment
         fields = ['transaction_id', 'payment_screenshot']
-    
+
     def validate_transaction_id(self, value):
         """Validate transaction ID is unique."""
         if ProfilePayment.objects.filter(transaction_id=value).exists():
             raise serializers.ValidationError("This transaction ID has already been submitted.")
         return value
+
+
+class ManagerProfileSerializer(serializers.ModelSerializer):
+    """Serializer for manager profile listings."""
+
+    email = serializers.EmailField(source='user.email', read_only=True)
+    phone = serializers.CharField(source='phone_number', read_only=True)
+    age = serializers.ReadOnlyField()
+    photos_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = [
+            'id', 'full_name', 'email', 'phone', 'gender', 'age',
+            'photos_count', 'profile_score', 'created_at',
+        ]
+
+    def get_photos_count(self, obj):
+        return obj.photos.count()
+
+
+class ManagerPaymentSerializer(serializers.ModelSerializer):
+    """Serializer for manager payment listings."""
+
+    profile_name = serializers.CharField(source='profile.full_name', read_only=True)
+    profile_email = serializers.EmailField(source='profile.user.email', read_only=True)
+    screenshot_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProfilePayment
+        fields = [
+            'id', 'profile_name', 'profile_email', 'amount',
+            'transaction_id', 'screenshot_url', 'status', 'submitted_at',
+        ]
+
+    def get_screenshot_url(self, obj):
+        if obj.payment_screenshot:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.payment_screenshot.url)
+            return obj.payment_screenshot.url
+        return None

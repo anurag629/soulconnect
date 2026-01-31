@@ -234,6 +234,26 @@ export const profileAPI = {
     }),
 }
 
+export const managerAPI = {
+  getDashboard: () => api.get('/profiles/manager/dashboard/'),
+
+  getPendingProfiles: () => api.get('/profiles/manager/pending/'),
+
+  approveProfile: (id: string) =>
+    api.post(`/profiles/manager/pending/${id}/approve/`),
+
+  rejectProfile: (id: string) =>
+    api.post(`/profiles/manager/pending/${id}/reject/`),
+
+  getPendingPayments: () => api.get('/profiles/manager/payments/'),
+
+  verifyPayment: (id: string) =>
+    api.post(`/profiles/manager/payments/${id}/verify/`),
+
+  rejectPayment: (id: string, reason?: string) =>
+    api.post(`/profiles/manager/payments/${id}/reject/`, { reason }),
+}
+
 
 // Type definitions - aligned with backend serializers
 export interface ProfileData {

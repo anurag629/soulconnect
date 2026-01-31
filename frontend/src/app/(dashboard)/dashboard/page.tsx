@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { Sparkles, CheckCircle2, User } from 'lucide-react'
+import { Sparkles, CheckCircle2, User, Clock, CreditCard } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Loading'
@@ -17,7 +17,12 @@ export default function DashboardPage() {
   }, [fetchProfile])
 
   const profileScore = profile?.profile_score || 0
-  const isProfileComplete = profileScore >= 100
+  const hasPhotos = (profile?.photos?.length || 0) > 0
+  const hasPayment = profile?.has_submitted_payment || false
+  const isProfileApproved = user?.is_profile_approved || false
+  // Profile fields are complete when score hits the 90 cap (all fields + photo done, just missing payment)
+  const profileFieldsComplete = hasPhotos && profileScore >= 90
+  const isFullyComplete = profileScore >= 100
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6">
@@ -48,13 +53,13 @@ export default function DashboardPage() {
             <Button>Create Profile</Button>
           </Link>
         </Card>
-      ) : isProfileComplete ? (
-        /* Profile Completed */
+      ) : isFullyComplete && isProfileApproved ? (
+        /* 4. All done — View Profile */
         <Card className="p-8 text-center bg-green-50 border-green-100">
           <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-gray-900 mb-2">Profile Completed!</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Your profile is complete. You're all set to find your perfect match.
+            Your profile is live. You're all set to find your perfect match.
           </p>
           <div className="flex gap-3 justify-center">
             <Link href="/profile">
@@ -67,20 +72,41 @@ export default function DashboardPage() {
             )}
           </div>
         </Card>
+      ) : isFullyComplete && !isProfileApproved ? (
+        /* 3. Profile + payment done, awaiting approval */
+        <Card className="p-8 text-center bg-yellow-50 border-yellow-100">
+          <Clock className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Profile Under Review</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Your profile is complete and the manager is reviewing it. It will be live once approved.
+          </p>
+        </Card>
+      ) : profileFieldsComplete && !hasPayment ? (
+        /* 2. Profile details complete, payment remaining */
+        <Card className="p-8 text-center bg-orange-50 border-orange-100">
+          <CreditCard className="h-12 w-12 text-orange-500 mx-auto mb-4" />
+          <h2 className="text-lg font-bold text-gray-900 mb-2">Complete Your Payment</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Your profile details are complete. Make the payment to submit your profile for review.
+          </p>
+          <Link href="/profile/edit?tab=payment">
+            <Button>Make Payment</Button>
+          </Link>
+        </Card>
       ) : (
-        /* Profile Incomplete - Complete Profile */
+        /* 1. Profile incomplete — fill details / upload photo */
         <Card className="p-8 text-center bg-primary-50 border-primary-100">
           <Sparkles className="h-12 w-12 text-primary-500 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-gray-900 mb-2">Complete Your Profile</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Your profile is {profileScore}% complete. Add more details to get better matches.
+            Your profile is {profileScore}% complete. Add more details and upload a photo to continue.
           </p>
           {/* Progress Bar */}
           <div className="max-w-xs mx-auto mb-6">
             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary-600 rounded-full transition-all duration-300"
-                style={{ width: `${profileScore}%` }}
+                style={{ width: `${Math.min(profileScore, 100)}%` }}
               />
             </div>
             <p className="text-xs text-gray-500 mt-1">{profileScore}% complete</p>

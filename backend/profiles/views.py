@@ -13,8 +13,10 @@ from django.http import HttpResponse
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, HRFlowable
+from PIL import Image as PILImage
 from reportlab.lib import colors
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from io import BytesIO
 from datetime import datetime
 
@@ -27,7 +29,8 @@ from .serializers import (
     ProfileListSerializer, PartnerPreferenceSerializer, ProfilePhotoSerializer,
     GovernmentIDSerializer, GovernmentIDSubmitSerializer,
     ProfileViewSerializer, BlockedProfileSerializer,
-    ProfilePaymentSerializer, ProfilePaymentSubmitSerializer
+    ProfilePaymentSerializer, ProfilePaymentSubmitSerializer,
+    ManagerProfileSerializer, ManagerPaymentSerializer,
 )
 from .filters import ProfileFilter
 from .permissions import IsManager
@@ -403,7 +406,10 @@ class ProfilePaymentSubmitView(views.APIView):
         serializer = ProfilePaymentSubmitSerializer(data=request.data)
         if serializer.is_valid():
             payment = serializer.save(profile=profile)
-            
+
+            # Recalculate profile score to include the submitted payment
+            profile.calculate_profile_score()
+
             return Response({
                 'message': 'Payment submitted successfully. Verification pending.',
                 'payment': ProfilePaymentSerializer(payment).data
@@ -467,156 +473,370 @@ class ManagerProfileDownloadView(views.APIView):
                 {'error': 'Profile not found.'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
+        # Color palette — formal traditional biodata
+        navy = colors.HexColor('#1a1a2e')
+        gold = colors.HexColor('#c9a84c')
+        dark_text = colors.HexColor('#1a1a2e')
+        label_gray = colors.HexColor('#555555')
+        light_border = colors.HexColor('#d4d4d4')
+
         # Create PDF
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
+        page_w, page_h = A4
+        margin = 0.6 * inch
+        doc = SimpleDocTemplate(
+            buffer, pagesize=A4,
+            topMargin=margin, bottomMargin=0.5 * inch,
+            leftMargin=margin, rightMargin=margin,
+        )
+        content_w = page_w - 2 * margin
         story = []
-        
-        # Styles
-        styles = getSampleStyleSheet()
+
+        # --- Styles ---
         title_style = ParagraphStyle(
-            'CustomTitle',
-            parent=styles['Heading1'],
-            fontSize=20,
-            textColor=colors.HexColor('#1f2937'),
-            spaceAfter=12,
-            alignment=1,  # Center
+            'BiodataTitle', fontSize=26, fontName='Helvetica-Bold',
+            textColor=navy, alignment=TA_CENTER, leading=32,
+            spaceAfter=2,
         )
-        heading_style = ParagraphStyle(
-            'CustomHeading',
-            parent=styles['Heading2'],
-            fontSize=14,
-            textColor=colors.HexColor('#4b5563'),
-            spaceAfter=8,
-            spaceBefore=12,
+        subtitle_style = ParagraphStyle(
+            'BiodataSubtitle', fontSize=8, fontName='Helvetica',
+            textColor=label_gray, alignment=TA_CENTER, spaceAfter=4,
         )
-        normal_style = styles['Normal']
-        
-        # Title
-        story.append(Paragraph("SoulConnect Profile Report", title_style))
-        story.append(Spacer(1, 0.2*inch))
-        story.append(Paragraph(f"Generated on: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}", 
-                               styles['Normal']))
-        story.append(Spacer(1, 0.3*inch))
-        
-        # Profile Information
-        def add_section(title, data):
-            story.append(Paragraph(title, heading_style))
-            table_data = []
-            for key, value in data.items():
-                if value:
-                    display_key = key.replace('_', ' ').title()
-                    table_data.append([display_key, str(value)])
-            
-            if table_data:
-                table = Table(table_data, colWidths=[2.5*inch, 4.5*inch])
-                table.setStyle(TableStyle([
-                    ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#f3f4f6')),
-                    ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
-                    ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-                    ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                    ('FONTSIZE', (0, 0), (-1, -1), 10),
-                    ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-                    ('TOPPADDING', (0, 0), (-1, -1), 8),
-                    ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                ]))
-                story.append(table)
-                story.append(Spacer(1, 0.2*inch))
-        
-        # Helper function to get choice display
+        name_style = ParagraphStyle(
+            'ProfileName', fontSize=18, fontName='Helvetica-Bold',
+            textColor=navy, alignment=TA_CENTER, leading=24,
+        )
+        quick_stats_style = ParagraphStyle(
+            'QuickStats', fontSize=10, fontName='Helvetica',
+            textColor=label_gray, alignment=TA_CENTER, leading=14,
+        )
+        section_title_style = ParagraphStyle(
+            'SectionTitle', fontSize=12, fontName='Helvetica-Bold',
+            textColor=navy, spaceBefore=12, spaceAfter=4,
+        )
+        cell_label_style = ParagraphStyle(
+            'CellLabel', fontSize=9.5, fontName='Helvetica-Bold',
+            textColor=label_gray, leading=13,
+        )
+        cell_value_style = ParagraphStyle(
+            'CellValue', fontSize=10, fontName='Helvetica',
+            textColor=dark_text, leading=14,
+        )
+        about_style = ParagraphStyle(
+            'AboutText', fontSize=10, fontName='Helvetica',
+            textColor=dark_text, leading=16, spaceAfter=4,
+        )
+        footer_style = ParagraphStyle(
+            'Footer', fontSize=8, fontName='Helvetica-Oblique',
+            textColor=label_gray, alignment=TA_CENTER,
+        )
+
+        # --- Helper functions ---
         def get_choice_display(choices_list, value):
             if not value:
-                return 'Not specified'
+                return None
             try:
                 return dict(choices_list)[value]
             except (KeyError, TypeError):
-                return str(value) if value else 'Not specified'
-        
-        # Basic Information
-        basic_info = {
-            'Full Name': profile.full_name,
-            'Email': profile.user.email,
-            'Gender': get_choice_display(Profile.GENDER_CHOICES, profile.gender),
-            'Date of Birth': profile.date_of_birth.strftime('%B %d, %Y') if profile.date_of_birth else None,
-            'Age': str(profile.age),
-            'Height': f"{profile.height_display} ({profile.height_cm} cm)",
-            'Marital Status': get_choice_display(Profile.MARITAL_STATUS_CHOICES, profile.marital_status),
-        }
-        add_section("Basic Information", basic_info)
-        
-        # Religious & Background
-        religious_info = {
-            'Religion': get_choice_display(Profile.RELIGION_CHOICES, profile.religion),
-            'Caste': profile.caste or 'Not specified',
-            'Sub-Caste': profile.sub_caste or 'Not specified',
-            'Gotra': profile.gotra or 'Not specified',
-            'Manglik': get_choice_display([
-                ('yes', 'Yes'), ('no', 'No'), ('partial', 'Partial'), ('dont_know', "Don't Know")
-            ], profile.manglik) if profile.manglik else 'Not specified',
-            'Star Sign': profile.star_sign or 'Not specified',
-            'Birth Place': profile.birth_place or 'Not specified',
-        }
-        add_section("Religious & Background", religious_info)
-        
-        # Education & Career
-        career_info = {
-            'Education': get_choice_display(Profile.EDUCATION_CHOICES, profile.education),
-            'Education Detail': profile.education_detail or 'Not specified',
-            'Profession': profile.profession,
-            'Company': profile.company_name or 'Not specified',
-            'Annual Income': get_choice_display(Profile.INCOME_CHOICES, profile.annual_income),
-        }
-        add_section("Education & Career", career_info)
-        
-        # Location
-        location_info = {
-            'Present Address': f"{profile.city}, {profile.district}, {profile.state}",
-            'Pincode': profile.pincode or 'Not specified',
-            'Country': profile.country,
-            'Native State': profile.native_state or 'Not specified',
-            'Native District': profile.native_district or 'Not specified',
-            'Native Area': profile.native_area or 'Not specified',
-        }
-        add_section("Location", location_info)
-        
-        # Family Details
-        family_info = {
-            'Father Name': profile.father_name or 'Not specified',
-            'Father Occupation': profile.father_occupation or 'Not specified',
-            'Mother Name': profile.mother_name or 'Not specified',
-            'Mother Occupation': profile.mother_occupation or 'Not specified',
-            'Siblings': profile.siblings or 'Not specified',
-            'Family Type': profile.family_type.replace('_', ' ').title() if profile.family_type else 'Not specified',
-            'Family Values': profile.family_values.replace('_', ' ').title() if profile.family_values else 'Not specified',
-        }
-        add_section("Family Details", family_info)
-        
-        # Lifestyle
-        lifestyle_info = {
-            'Diet': get_choice_display(Profile.DIET_CHOICES, profile.diet),
-            'Smoking': profile.smoking.replace('_', ' ').title() if profile.smoking else 'Not specified',
-            'Drinking': profile.drinking.replace('_', ' ').title() if profile.drinking else 'Not specified',
-        }
-        add_section("Lifestyle", lifestyle_info)
-        
-        # About Me
+                return str(value) if value else None
+
+        def add_section(title, data):
+            """Add a styled section with label-value rows."""
+            rows = [(k, v) for k, v in data if v and str(v).strip()]
+            if not rows:
+                return
+            story.append(Paragraph(title, section_title_style))
+            story.append(HRFlowable(
+                width='100%', thickness=0.75, color=gold,
+                spaceAfter=6, spaceBefore=0,
+            ))
+            table_data = []
+            for label, value in rows:
+                table_data.append([
+                    Paragraph(label, cell_label_style),
+                    Paragraph(str(value), cell_value_style),
+                ])
+            table = Table(table_data, colWidths=[2.2 * inch, content_w - 2.2 * inch])
+            style_cmds = [
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('LEFTPADDING', (0, 0), (-1, -1), 10),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+                ('LINEBELOW', (0, 0), (-1, -2), 0.4, light_border),
+            ]
+            table.setStyle(TableStyle(style_cmds))
+            story.append(table)
+            story.append(Spacer(1, 0.1 * inch))
+
+        # ===== HEADER — "BIODATA" =====
+        story.append(Paragraph("BIODATA", title_style))
+        story.append(HRFlowable(
+            width='40%', thickness=1, color=gold,
+            spaceAfter=4, spaceBefore=0,
+        ))
+        story.append(Paragraph("SoulConnect", subtitle_style))
+        story.append(Spacer(1, 0.2 * inch))
+
+        # ===== PHOTO — centered, 2.8 × 3.5 inch box =====
+        primary_photo = profile.photos.filter(is_primary=True).first() or profile.photos.first()
+        if primary_photo:
+            try:
+                primary_photo.image.open('rb')
+                img_data = primary_photo.image.read()
+                primary_photo.image.close()
+                img_buffer = BytesIO(img_data)
+                pil_img = PILImage.open(img_buffer)
+                orig_w, orig_h = pil_img.size
+                img_buffer.seek(0)
+                # Scale proportionally within 2.8 × 3.5 inch box
+                max_w, max_h = 2.8 * inch, 3.5 * inch
+                aspect = orig_w / orig_h
+                if aspect > max_w / max_h:
+                    w = max_w
+                    h = w / aspect
+                else:
+                    h = max_h
+                    w = h * aspect
+                photo_img = RLImage(img_buffer, width=w, height=h)
+                # Wrap in a table for border frame + centering
+                photo_table = Table([[photo_img]], colWidths=[w + 8], rowHeights=[h + 8])
+                photo_table.setStyle(TableStyle([
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('BOX', (0, 0), (-1, -1), 0.75, navy),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+                ]))
+                # Center the photo table on the page
+                outer = Table([[photo_table]], colWidths=[content_w])
+                outer.setStyle(TableStyle([
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                    ('TOPPADDING', (0, 0), (-1, -1), 0),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                ]))
+                story.append(outer)
+                story.append(Spacer(1, 0.2 * inch))
+            except Exception:
+                pass
+
+        # ===== NAME + QUICK STATS =====
+        story.append(Paragraph(profile.full_name or 'N/A', name_style))
+        story.append(Spacer(1, 4))
+
+        quick_items = []
+        if profile.age:
+            quick_items.append(f"{profile.age} yrs")
+        gender = get_choice_display(Profile.GENDER_CHOICES, profile.gender)
+        if gender:
+            quick_items.append(gender)
+        if profile.height_display:
+            quick_items.append(profile.height_display)
+        marital = get_choice_display(Profile.MARITAL_STATUS_CHOICES, profile.marital_status)
+        if marital:
+            quick_items.append(marital)
+        if quick_items:
+            story.append(Paragraph(
+                ' &nbsp;|&nbsp; '.join(quick_items), quick_stats_style
+            ))
+        story.append(Spacer(1, 0.2 * inch))
+
+        # ===== DETAIL SECTIONS =====
+        add_section("Personal Details", [
+            ('Religion', get_choice_display(Profile.RELIGION_CHOICES, profile.religion)),
+            ('Caste', profile.caste),
+            ('Sub-Caste', profile.sub_caste),
+            ('Gotra', profile.gotra),
+            ('Manglik', get_choice_display(
+                [('yes', 'Yes'), ('no', 'No'), ('partial', 'Partial'), ('dont_know', "Don't Know")],
+                profile.manglik,
+            )),
+            ('Star Sign', profile.star_sign),
+            ('Birth Place', profile.birth_place),
+            ('Diet', get_choice_display(Profile.DIET_CHOICES, profile.diet)),
+            ('Smoking', profile.smoking.replace('_', ' ').title() if profile.smoking else None),
+            ('Drinking', profile.drinking.replace('_', ' ').title() if profile.drinking else None),
+        ])
+
+        add_section("Education &amp; Career", [
+            ('Education', get_choice_display(Profile.EDUCATION_CHOICES, profile.education)),
+            ('Education Detail', profile.education_detail),
+            ('Profession', profile.profession),
+            ('Company', profile.company_name),
+            ('Annual Income', get_choice_display(Profile.INCOME_CHOICES, profile.annual_income)),
+        ])
+
+        add_section("Family Details", [
+            ('Father Name', profile.father_name),
+            ('Father Occupation', profile.father_occupation),
+            ('Mother Name', profile.mother_name),
+            ('Mother Occupation', profile.mother_occupation),
+            ('Siblings', profile.siblings),
+            ('Family Type', profile.family_type.replace('_', ' ').title() if profile.family_type else None),
+            ('Family Values', profile.family_values.replace('_', ' ').title() if profile.family_values else None),
+        ])
+
+        add_section("Location", [
+            ('Present Address', ', '.join(p for p in [profile.city, profile.district, profile.state] if p)),
+            ('Pincode', profile.pincode),
+            ('Country', profile.country),
+            ('Native State', profile.native_state),
+            ('Native District', profile.native_district),
+            ('Native Area', profile.native_area),
+        ])
+
+        add_section("Contact", [
+            ('Email', profile.user.email),
+            ('Phone Number', profile.phone_number),
+        ])
+
+        # ===== ABOUT ME =====
         if profile.about_me:
-            story.append(Paragraph("About Me", heading_style))
-            story.append(Paragraph(profile.about_me, normal_style))
-            story.append(Spacer(1, 0.2*inch))
-        
-        # Contact (if available)
-        contact_info = {
-            'Phone Number': profile.phone_number or 'Not provided',
-        }
-        add_section("Contact Information", contact_info)
-        
+            story.append(Paragraph("About Me", section_title_style))
+            story.append(HRFlowable(
+                width='100%', thickness=0.75, color=gold,
+                spaceAfter=6, spaceBefore=0,
+            ))
+            story.append(Paragraph(profile.about_me, about_style))
+            story.append(Spacer(1, 0.1 * inch))
+
+        # ===== FOOTER =====
+        story.append(Spacer(1, 0.3 * inch))
+        story.append(HRFlowable(width='100%', thickness=0.4, color=light_border, spaceAfter=8))
+        story.append(Paragraph(
+            f"Confidential — SoulConnect &nbsp;&nbsp;|&nbsp;&nbsp; {datetime.now().strftime('%B %d, %Y')}",
+            footer_style,
+        ))
+
         # Build PDF
         doc.build(story)
         buffer.seek(0)
-        
+
         # Create response
         response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="profile_{profile.full_name.replace(" ", "_")}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+        safe_name = profile.full_name.replace(' ', '_') if profile.full_name else 'profile'
+        response['Content-Disposition'] = f'attachment; filename="biodata_{safe_name}_{datetime.now().strftime("%Y%m%d")}.pdf"'
         return response
+
+
+# ---------------------------------------------------------------------------
+# Manager Dashboard Views
+# ---------------------------------------------------------------------------
+
+class ManagerDashboardView(views.APIView):
+    """Dashboard stats for managers."""
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def get(self, request):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        pending_profiles = User.objects.filter(
+            is_profile_complete=True,
+            is_profile_approved=False,
+            is_active=True,
+        ).count()
+        pending_payments = ProfilePayment.objects.filter(status='pending').count()
+        pending_photos = ProfilePhoto.objects.filter(
+            is_approved=False, is_rejected=False
+        ).count()
+        total_users = User.objects.filter(is_active=True, is_manager=False).count()
+
+        return Response({
+            'pending_profiles': pending_profiles,
+            'pending_payments': pending_payments,
+            'pending_photos': pending_photos,
+            'total_users': total_users,
+        })
+
+
+class ManagerPendingProfilesView(generics.ListAPIView):
+    """List profiles pending approval."""
+    permission_classes = [IsAuthenticated, IsManager]
+    serializer_class = ManagerProfileSerializer
+
+    def get_queryset(self):
+        return Profile.objects.filter(
+            user__is_profile_complete=True,
+            user__is_profile_approved=False,
+            user__is_active=True,
+        ).select_related('user').prefetch_related('photos').order_by('-created_at')
+
+
+class ManagerApproveProfileView(views.APIView):
+    """Approve a pending profile."""
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def post(self, request, pk):
+        try:
+            profile = Profile.objects.select_related('user').get(pk=pk)
+        except Profile.DoesNotExist:
+            return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = profile.user
+        user.is_profile_approved = True
+        user.save(update_fields=['is_profile_approved'])
+        return Response({'message': f'Profile for {profile.full_name} approved.'})
+
+
+class ManagerRejectProfileView(views.APIView):
+    """Reject / keep a profile as not approved."""
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def post(self, request, pk):
+        try:
+            profile = Profile.objects.select_related('user').get(pk=pk)
+        except Profile.DoesNotExist:
+            return Response({'error': 'Profile not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        user = profile.user
+        user.is_profile_approved = False
+        user.save(update_fields=['is_profile_approved'])
+        return Response({'message': f'Profile for {profile.full_name} rejected.'})
+
+
+class ManagerPendingPaymentsView(generics.ListAPIView):
+    """List payments pending verification."""
+    permission_classes = [IsAuthenticated, IsManager]
+    serializer_class = ManagerPaymentSerializer
+
+    def get_queryset(self):
+        return (
+            ProfilePayment.objects.filter(status='pending')
+            .select_related('profile', 'profile__user')
+            .order_by('-submitted_at')
+        )
+
+
+class ManagerVerifyPaymentView(views.APIView):
+    """Verify a pending payment."""
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def post(self, request, pk):
+        try:
+            payment = ProfilePayment.objects.select_related('profile').get(pk=pk)
+        except ProfilePayment.DoesNotExist:
+            return Response({'error': 'Payment not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        payment.verify(request.user)
+        return Response({'message': 'Payment verified successfully.'})
+
+
+class ManagerRejectPaymentView(views.APIView):
+    """Reject a pending payment."""
+    permission_classes = [IsAuthenticated, IsManager]
+
+    def post(self, request, pk):
+        try:
+            payment = ProfilePayment.objects.select_related('profile').get(pk=pk)
+        except ProfilePayment.DoesNotExist:
+            return Response({'error': 'Payment not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        reason = request.data.get('reason', '')
+        payment.reject(reason)
+        return Response({'message': 'Payment rejected.'})

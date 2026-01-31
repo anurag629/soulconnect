@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { User, Camera, Edit2, MapPin, CheckCircle } from 'lucide-react'
+import { User, Camera, Edit2, MapPin, CheckCircle, Clock } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Avatar } from '@/components/ui/Avatar'
@@ -137,7 +137,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Profile completion */}
-          {completionPercentage < 100 && (
+          {completionPercentage < 100 ? (
             <div className="mt-4 p-3 bg-primary-50 rounded-lg">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-medium text-gray-700">Profile Completion</span>
@@ -150,7 +150,14 @@ export default function ProfilePage() {
                 />
               </div>
             </div>
-          )}
+          ) : !user?.is_profile_approved ? (
+            <div className="mt-4 p-3 bg-yellow-50 rounded-lg flex items-center gap-2">
+              <Clock className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+              <span className="text-xs font-medium text-yellow-800">
+                Profile complete — under review by manager
+              </span>
+            </div>
+          ) : null}
         </div>
       </Card>
 

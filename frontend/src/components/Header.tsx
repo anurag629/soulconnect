@@ -11,6 +11,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   Heart,
   Search,
+  ShieldCheck,
   User,
   Bell,
   Settings,
@@ -33,8 +34,13 @@ const Header: React.FC = () => {
   // Build navigation based on user role
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Heart },
-    // Search only visible to managers
-    ...(user?.is_manager ? [{ name: 'Search', href: '/search', icon: Search }] : []),
+    // Manager-only links
+    ...(user?.is_manager
+      ? [
+          { name: 'Manager', href: '/manager', icon: ShieldCheck },
+          { name: 'Search', href: '/search', icon: Search },
+        ]
+      : []),
   ]
 
   const handleLogout = async () => {

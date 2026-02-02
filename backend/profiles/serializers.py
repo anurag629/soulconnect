@@ -26,18 +26,24 @@ class ProfilePhotoSerializer(serializers.ModelSerializer):
     
     def get_image_url(self, obj):
         if obj.image:
+            url = obj.image.url
+            if url.startswith('http'):
+                return url
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.image.url)
-            return f"http://127.0.0.1:8000{obj.image.url}"
+                return request.build_absolute_uri(url)
+            return url
         return None
-    
+
     def get_thumbnail_url(self, obj):
         if obj.thumbnail:
+            url = obj.thumbnail.url
+            if url.startswith('http'):
+                return url
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.thumbnail.url)
-            return f"http://127.0.0.1:8000{obj.thumbnail.url}"
+                return request.build_absolute_uri(url)
+            return url
         return self.get_image_url(obj)
 
 
@@ -306,8 +312,11 @@ class ManagerPaymentSerializer(serializers.ModelSerializer):
 
     def get_screenshot_url(self, obj):
         if obj.payment_screenshot:
+            url = obj.payment_screenshot.url
+            if url.startswith('http'):
+                return url
             request = self.context.get('request')
             if request:
-                return request.build_absolute_uri(obj.payment_screenshot.url)
-            return obj.payment_screenshot.url
+                return request.build_absolute_uri(url)
+            return url
         return None

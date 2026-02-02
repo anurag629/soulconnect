@@ -18,9 +18,9 @@ python-decouple==3.8
 gunicorn==21.2.0
 whitenoise==6.6.0
 
-# Azure Storage (lazy loaded)
-django-storages==1.14.2
-azure-storage-blob==12.19.0
+# Cloudinary Storage
+cloudinary
+django-cloudinary-storage
 
 # Image Processing
 Pillow==10.2.0

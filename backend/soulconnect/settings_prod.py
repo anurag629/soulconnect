@@ -29,7 +29,7 @@ DATABASES = {
 # CORS - Allow your Vercel frontend
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
-    'https://soulconnect.vercel.app',
+    'https://kshatriyaconnect.vercel.app',
 ]
 
 # Add any additional origins from environment

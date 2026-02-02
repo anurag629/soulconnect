@@ -576,7 +576,7 @@ class ManagerProfileDownloadView(views.APIView):
             width='40%', thickness=1, color=gold,
             spaceAfter=4, spaceBefore=0,
         ))
-        story.append(Paragraph("SoulConnect", subtitle_style))
+        story.append(Paragraph("KSHATRIYAConnect", subtitle_style))
         story.append(Spacer(1, 0.2 * inch))
 
         # ===== PHOTO — centered, 2.8 × 3.5 inch box =====
@@ -709,7 +709,7 @@ class ManagerProfileDownloadView(views.APIView):
         story.append(Spacer(1, 0.3 * inch))
         story.append(HRFlowable(width='100%', thickness=0.4, color=light_border, spaceAfter=8))
         story.append(Paragraph(
-            f"Confidential — SoulConnect &nbsp;&nbsp;|&nbsp;&nbsp; {datetime.now().strftime('%B %d, %Y')}",
+            f"Confidential — KSHATRIYAConnect &nbsp;&nbsp;|&nbsp;&nbsp; {datetime.now().strftime('%B %d, %Y')}",
             footer_style,
         ))
 

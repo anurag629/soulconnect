@@ -3,7 +3,7 @@
 
 services:
   - type: web
-    name: soulconnect-api
+    name: kshatriyaconnect-api
     env: python
     region: singapore  # Change to your preferred region
     plan: free  # or starter, standard, etc.

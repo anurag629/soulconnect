@@ -1,5 +1,5 @@
 /**
- * SoulConnect Utility Functions
+ * KSHATRIYAConnect Utility Functions
  * Common helper functions used throughout the application
  */
 

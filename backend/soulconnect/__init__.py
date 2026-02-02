@@ -1,4 +1,4 @@
-# SoulConnect - Indian Matrimonial Platform
+# KSHATRIYAConnect - Indian Matrimonial Platform
 # Backend Django Application
 
 from __future__ import absolute_import, unicode_literals

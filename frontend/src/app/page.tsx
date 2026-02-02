@@ -226,7 +226,7 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary-600" fill="currentColor" />
-            <span className="font-serif font-semibold text-gray-900">SoulConnect</span>
+            <span className="font-serif font-semibold text-gray-900">KSHATRIYAConnect</span>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <Link href="/privacy" className="text-gray-500 hover:text-gray-900 active:text-gray-900 transition">Privacy</Link>

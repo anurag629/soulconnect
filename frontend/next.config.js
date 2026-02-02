@@ -4,7 +4,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: '*.blob.core.windows.net',
+        hostname: 'res.cloudinary.com',
         port: '',
         pathname: '/**',
       },

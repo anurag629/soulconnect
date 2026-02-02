@@ -1,5 +1,5 @@
 """
-Matching Models for SoulConnect.
+Matching Models for KSHATRIYAConnect.
 
 Models for likes, matches, and interest expressions.
 """

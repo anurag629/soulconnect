@@ -1,5 +1,5 @@
 """
-Payment and Subscription Models for SoulConnect.
+Payment and Subscription Models for KSHATRIYAConnect.
 
 Models for subscription plans, payments, and transactions.
 """

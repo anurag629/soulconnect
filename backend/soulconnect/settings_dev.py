@@ -1,5 +1,5 @@
 """
-Development settings for SoulConnect.
+Development settings for KSHATRIYAConnect.
 Uses SQLite and local file storage for easy local development.
 """
 
@@ -165,7 +165,7 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Email Configuration - Console backend for development
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'noreply@soulconnect.in'
+DEFAULT_FROM_EMAIL = 'noreply@kshatriyaconnect.in'
 
 # Razorpay Configuration (test keys)
 RAZORPAY_KEY_ID = 'rzp_test_xxxxxxxxxxxxxxxx'
@@ -173,8 +173,8 @@ RAZORPAY_KEY_SECRET = 'xxxxxxxxxxxxxxxxxxxxxxxx'
 
 # API Documentation
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'SoulConnect API',
-    'DESCRIPTION': 'API for SoulConnect Matrimonial Platform',
+    'TITLE': 'KSHATRIYAConnect API',
+    'DESCRIPTION': 'API for KSHATRIYAConnect Matrimonial Platform',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }

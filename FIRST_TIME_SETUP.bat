@@ -1,6 +1,6 @@
 @echo off
 echo ================================
-echo   SoulConnect - First Time Setup
+echo   KSHATRIYAConnect - First Time Setup
 echo ================================
 echo.
 echo This script will set up everything for you!
@@ -22,7 +22,7 @@ set DJANGO_SETTINGS_MODULE=soulconnect.settings_dev
 python manage.py migrate
 
 echo [5/6] Creating admin user...
-python -c "import django; django.setup(); from accounts.models import User; User.objects.create_superuser(email='admin@soulconnect.com', password='Admin@123', first_name='Admin', last_name='User') if not User.objects.filter(email='admin@soulconnect.com').exists() else print('Admin exists')"
+python -c "import django; django.setup(); from accounts.models import User; User.objects.create_superuser(email='admin@kshatriyaconnect.com', password='Admin@123', first_name='Admin', last_name='User') if not User.objects.filter(email='admin@kshatriyaconnect.com').exists() else print('Admin exists')"
 
 REM Frontend Setup
 echo [6/6] Setting up Frontend...
@@ -40,7 +40,7 @@ echo   2. Double-click START_FRONTEND.bat (in a new window)
 echo   3. Open http://localhost:3000 in your browser
 echo.
 echo Admin Login:
-echo   Email: admin@soulconnect.com
+echo   Email: admin@kshatriyaconnect.com
 echo   Password: Admin@123
 echo.
 

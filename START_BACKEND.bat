@@ -1,6 +1,6 @@
 @echo off
 echo ================================
-echo   Starting SoulConnect Backend
+echo   Starting KSHATRIYAConnect Backend
 echo ================================
 echo.
 

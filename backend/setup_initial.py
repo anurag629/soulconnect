@@ -13,9 +13,9 @@ from accounts.models import User
 
 def setup():
     # Create admin user if not exists
-    if not User.objects.filter(email='admin@soulconnect.com').exists():
+    if not User.objects.filter(email='admin@kshatriyaconnect.com').exists():
         User.objects.create_superuser(
-            email='admin@soulconnect.com',
+            email='admin@kshatriyaconnect.com',
             password='Admin@123',
             first_name='Admin',
             last_name='User'

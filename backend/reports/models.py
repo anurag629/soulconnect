@@ -1,5 +1,5 @@
 """
-Report Models for SoulConnect.
+Report Models for KSHATRIYAConnect.
 
 Models for reporting inappropriate users/content.
 """

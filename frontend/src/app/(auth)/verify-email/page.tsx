@@ -102,7 +102,7 @@ export default function VerifyEmailPage() {
                 Email Verified!
               </h1>
               <p className="text-gray-600 mb-6">
-                Your email has been successfully verified. You can now access all features of SoulConnect.
+                Your email has been successfully verified. You can now access all features of KSHATRIYAConnect.
               </p>
               <Link href="/login">
                 <Button className="w-full">

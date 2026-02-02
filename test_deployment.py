@@ -95,7 +95,7 @@ def test_registration():
 
 def main():
     print("=" * 60)
-    print("SoulConnect Deployment Diagnostic")
+    print("KSHATRIYAConnect Deployment Diagnostic")
     print("=" * 60)
     print(f"Backend: {BACKEND_URL}")
     print(f"Frontend: {FRONTEND_URL}")

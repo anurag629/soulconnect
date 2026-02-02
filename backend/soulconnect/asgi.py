@@ -1,5 +1,5 @@
 """
-ASGI config for SoulConnect project.
+ASGI config for KSHATRIYAConnect project.
 """
 
 import os

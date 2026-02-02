@@ -15,13 +15,13 @@ from accounts.models import User
 # Manager credentials (hardcoded as per requirements)
 MANAGERS = [
     {
-        'email': 'manager1@soulconnect.in',
+        'email': 'manager1@kshatriyaconnect.in',
         'password': 'Manager@123',
         'first_name': 'Manager',
         'last_name': 'One',
     },
     {
-        'email': 'manager2@soulconnect.in',
+        'email': 'manager2@kshatriyaconnect.in',
         'password': 'Manager@456',
         'first_name': 'Manager',
         'last_name': 'Two',

@@ -1,6 +1,6 @@
-# 🚀 SoulConnect - Complete Setup Guide for Beginners
+# 🚀 KSHATRIYAConnect - Complete Setup Guide for Beginners
 
-This guide will walk you through setting up the SoulConnect matrimonial platform step by step. No prior experience needed!
+This guide will walk you through setting up the KSHATRIYAConnect matrimonial platform step by step. No prior experience needed!
 
 ---
 
@@ -119,8 +119,8 @@ python -c "
 import django
 django.setup()
 from accounts.models import User
-if not User.objects.filter(email='admin@soulconnect.com').exists():
-    User.objects.create_superuser(email='admin@soulconnect.com', password='Admin@123', first_name='Admin', last_name='User')
+if not User.objects.filter(email='admin@kshatriyaconnect.com').exists():
+    User.objects.create_superuser(email='admin@kshatriyaconnect.com', password='Admin@123', first_name='Admin', last_name='User')
     print('Admin user created!')
 else:
     print('Admin already exists')
@@ -200,7 +200,7 @@ If port 3000 is busy, it will use 3001.
 | **API Documentation** | http://localhost:8000/api/schema/swagger-ui/ |
 
 ### Admin Login:
-- Email: `admin@soulconnect.com`
+- Email: `admin@kshatriyaconnect.com`
 - Password: `Admin@123`
 
 ---

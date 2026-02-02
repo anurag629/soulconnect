@@ -1,5 +1,5 @@
 """
-Chat Models for SoulConnect.
+Chat Models for KSHATRIYAConnect.
 
 Models for private messaging between matched users.
 """

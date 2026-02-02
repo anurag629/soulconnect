@@ -30,9 +30,9 @@ django.setup()
 from accounts.models import User
 
 # Create admin user
-if not User.objects.filter(email='admin@soulconnect.com').exists():
+if not User.objects.filter(email='admin@kshatriyaconnect.com').exists():
     User.objects.create_superuser(
-        email='admin@soulconnect.com',
+        email='admin@kshatriyaconnect.com',
         password='Admin@123',
         first_name='Admin',
         last_name='User'
@@ -44,13 +44,13 @@ else:
 # Create/Update manager accounts
 MANAGERS = [
     {
-        'email': 'manager1@soulconnect.in',
+        'email': 'manager1@kshatriyaconnect.in',
         'password': 'Manager@123',
         'first_name': 'Manager',
         'last_name': 'One',
     },
     {
-        'email': 'manager2@soulconnect.in',
+        'email': 'manager2@kshatriyaconnect.in',
         'password': 'Manager@456',
         'first_name': 'Manager',
         'last_name': 'Two',

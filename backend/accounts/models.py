@@ -1,5 +1,5 @@
 """
-Custom User Model for SoulConnect.
+Custom User Model for KSHATRIYAConnect.
 
 Extends Django's AbstractUser to support email-based authentication
 and additional fields required for a matrimonial platform.
@@ -44,7 +44,7 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser):
     """
-    Custom User model for SoulConnect matrimonial platform.
+    Custom User model for KSHATRIYAConnect matrimonial platform.
     
     Uses email as the primary identifier instead of username.
     Includes fields for verification status and account management.

@@ -1,5 +1,5 @@
 """
-URL configuration for SoulConnect project.
+URL configuration for KSHATRIYAConnect project.
 """
 
 from django.contrib import admin

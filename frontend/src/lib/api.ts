@@ -1,5 +1,5 @@
 /**
- * SoulConnect API Client
+ * KSHATRIYAConnect API Client
  * Centralized axios instance with authentication interceptors
  */
 
@@ -10,8 +10,8 @@ import toast from 'react-hot-toast'
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
 
 // Token storage keys
-const ACCESS_TOKEN_KEY = 'soulconnect_access_token'
-const REFRESH_TOKEN_KEY = 'soulconnect_refresh_token'
+const ACCESS_TOKEN_KEY = 'kshatriyaconnect_access_token'
+const REFRESH_TOKEN_KEY = 'kshatriyaconnect_refresh_token'
 
 // Create axios instance
 const api: AxiosInstance = axios.create({

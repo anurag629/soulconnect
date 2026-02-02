@@ -52,21 +52,21 @@ def _send_verification_email_impl(user_id: str, token: str):
         
         verification_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
         
-        subject = "Verify your SoulConnect account"
+        subject = "Verify your KSHATRIYAConnect account"
         message = f"""
 Hello {user.first_name},
 
-Thank you for registering on SoulConnect - India's Premium Matrimonial Platform.
+Thank you for registering on KSHATRIYAConnect - India's Premium Matrimonial Platform.
 
 Please verify your email by clicking the link below:
 {verification_url}
 
 This link will expire in 24 hours.
 
-If you didn't create an account on SoulConnect, please ignore this email.
+If you didn't create an account on KSHATRIYAConnect, please ignore this email.
 
 Best regards,
-The SoulConnect Team
+The KSHATRIYAConnect Team
 """
         
         send_mail(
@@ -103,11 +103,11 @@ def _send_password_reset_email_impl(user_id: str, token: str):
         
         reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
         
-        subject = "Reset your SoulConnect password"
+        subject = "Reset your KSHATRIYAConnect password"
         message = f"""
 Hello {user.first_name},
 
-We received a request to reset your password for your SoulConnect account.
+We received a request to reset your password for your KSHATRIYAConnect account.
 
 Click the link below to reset your password:
 {reset_url}
@@ -117,7 +117,7 @@ This link will expire in 1 hour.
 If you didn't request a password reset, please ignore this email or contact our support team.
 
 Best regards,
-The SoulConnect Team
+The KSHATRIYAConnect Team
 """
         
         send_mail(
@@ -151,11 +151,11 @@ def _send_welcome_email_impl(user_id: str):
     try:
         user = User.objects.get(id=user_id)
         
-        subject = "Welcome to SoulConnect - Begin Your Journey"
+        subject = "Welcome to KSHATRIYAConnect - Begin Your Journey"
         message = f"""
 Hello {user.first_name},
 
-Welcome to SoulConnect - India's Premium Matrimonial Platform!
+Welcome to KSHATRIYAConnect - India's Premium Matrimonial Platform!
 
 We're thrilled to have you join our community of verified, serious individuals 
 looking for meaningful life partnerships.
@@ -172,7 +172,7 @@ maintaining the highest standards of privacy and security.
 If you have any questions, our support team is always here to help.
 
 Best wishes on your journey,
-The SoulConnect Team
+The KSHATRIYAConnect Team
 """
         
         send_mail(
@@ -208,21 +208,21 @@ def _send_match_notification_impl(user_id: str, matched_user_id: str):
         user = User.objects.get(id=user_id)
         matched_user = User.objects.get(id=matched_user_id)
         
-        subject = "You have a new match on SoulConnect!"
+        subject = "You have a new match on KSHATRIYAConnect!"
         message = f"""
 Hello {user.first_name},
 
-Great news! You have a new match on SoulConnect!
+Great news! You have a new match on KSHATRIYAConnect!
 
 {matched_user.first_name} has shown interest in you, and the feeling is mutual!
 
-Log in to SoulConnect to start a conversation and get to know each other better.
+Log in to KSHATRIYAConnect to start a conversation and get to know each other better.
 
 Remember, meaningful connections take time. Be respectful, be genuine, and 
 enjoy the journey of getting to know someone new.
 
 Best wishes,
-The SoulConnect Team
+The KSHATRIYAConnect Team
 """
         
         send_mail(

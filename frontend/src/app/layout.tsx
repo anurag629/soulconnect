@@ -14,15 +14,15 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: 'SoulConnect - Find Your Perfect Life Partner',
+  title: 'KSHATRIYAConnect - Find Your Perfect Life Partner',
   description: 'India\'s most trusted matrimonial platform for finding your perfect life partner. Safe, elegant, and marriage-oriented matchmaking.',
   keywords: 'matrimony, marriage, matchmaking, Indian matrimonial, wedding, life partner',
   openGraph: {
-    title: 'SoulConnect - Find Your Perfect Life Partner',
+    title: 'KSHATRIYAConnect - Find Your Perfect Life Partner',
     description: 'India\'s most trusted matrimonial platform',
     type: 'website',
     locale: 'en_IN',
-    siteName: 'SoulConnect',
+    siteName: 'KSHATRIYAConnect',
   },
 }
 

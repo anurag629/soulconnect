@@ -1,5 +1,5 @@
 /**
- * SoulConnect Authentication Store
+ * KSHATRIYAConnect Authentication Store
  * Zustand store for managing authentication state
  */
 
@@ -186,7 +186,7 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (loading: boolean) => set({ isLoading: loading }),
     }),
     {
-      name: 'soulconnect-auth',
+      name: 'kshatriyaconnect-auth',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         user: state.user,

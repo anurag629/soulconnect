@@ -1,5 +1,5 @@
 """
-WSGI config for SoulConnect project.
+WSGI config for KSHATRIYAConnect project.
 """
 
 import os

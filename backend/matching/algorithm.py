@@ -1,5 +1,5 @@
 """
-Matching Algorithm for SoulConnect.
+Matching Algorithm for KSHATRIYAConnect.
 
 Calculates compatibility scores based on partner preferences
 and profile attributes.

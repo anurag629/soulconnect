@@ -1,5 +1,5 @@
 """
-Celery configuration for SoulConnect project.
+Celery configuration for KSHATRIYAConnect project.
 Used for async tasks like email sending, image processing, etc.
 """
 

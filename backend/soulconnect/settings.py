@@ -1,5 +1,5 @@
 """
-Django settings for SoulConnect matrimonial platform.
+Django settings for KSHATRIYAConnect matrimonial platform.
 
 Production-ready configuration with security best practices.
 """
@@ -106,7 +106,7 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': config('DB_NAME', default='soulconnect'),
+            'NAME': config('DB_NAME', default='kshatriyaconnect'),
             'USER': config('DB_USER', default='postgres'),
             'PASSWORD': config('DB_PASSWORD', default=''),
             'HOST': config('DB_HOST', default='localhost'),
@@ -231,7 +231,7 @@ EMAIL_BACKEND = 'anymail.backends.sendgrid.EmailBackend'
 ANYMAIL = {
     'SENDGRID_API_KEY': config('SENDGRID_API_KEY', default=''),
 }
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@soulconnect.in')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@kshatriyaconnect.in')
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 # Razorpay Configuration
@@ -251,8 +251,8 @@ if REDIS_URL:
 
 # API Documentation
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'SoulConnect API',
-    'DESCRIPTION': 'API for SoulConnect Matrimonial Platform',
+    'TITLE': 'KSHATRIYAConnect API',
+    'DESCRIPTION': 'API for KSHATRIYAConnect Matrimonial Platform',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }

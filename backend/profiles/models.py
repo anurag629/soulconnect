@@ -1,5 +1,5 @@
 """
-Profile Models for SoulConnect.
+Profile Models for KSHATRIYAConnect.
 
 Comprehensive profile models for matrimonial platform including
 personal details, preferences, photos, and verification documents.
